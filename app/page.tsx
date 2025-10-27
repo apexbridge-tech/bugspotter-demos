@@ -29,10 +29,10 @@ export default function Home() {
 
         // For local development
         if (window.location.hostname === 'localhost') {
-          window.location.href = `http://localhost:3000/${subdomain}/dashboard`;
+          window.location.href = `http://localhost:3000/${subdomain}`;
         } else {
-          // For production: use session-only subdomain (e.g., alex-g5po.demo.bugspotter.io/dashboard)
-          window.location.href = `https://${subdomain}.demo.bugspotter.io/dashboard`;
+          // For production: use session-only subdomain (e.g., alex-g5po.demo.bugspotter.io)
+          window.location.href = `https://${subdomain}.demo.bugspotter.io`;
         }
       } else {
         setError(data.error || 'Failed to create demo session');

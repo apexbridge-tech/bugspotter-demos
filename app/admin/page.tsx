@@ -99,9 +99,9 @@ export default function AdminPage() {
 
   const getDashboardUrl = (sessionId: string) => {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      return `/${sessionId}/dashboard`;
+      return `/${sessionId}`;
     }
-    return `https://${sessionId}.demo.bugspotter.io/dashboard`;
+    return `https://${sessionId}.demo.bugspotter.io`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {

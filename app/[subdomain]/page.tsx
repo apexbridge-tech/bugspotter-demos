@@ -11,7 +11,12 @@ export default async function SubdomainRoot() {
   const demoType = headersList.get('X-Demo-Type');
   const sessionId = headersList.get('X-Session-ID');
 
-  // If no valid demo type, redirect to main site
+  // If no demo type but has session ID, redirect to dashboard
+  if (!demoType && sessionId) {
+    redirect('/dashboard');
+  }
+
+  // If no valid demo type or session, redirect to main site
   if (!demoType || !sessionId) {
     redirect('/');
   }
