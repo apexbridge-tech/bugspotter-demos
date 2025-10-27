@@ -3,10 +3,15 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+function getRedis() {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Redis credentials not configured');
+  }
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+}
 
 interface AdminUser {
   email: string;
@@ -24,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify session
+    const redis = getRedis();
     const email = await redis.get(`admin-session:${sessionToken}`);
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
@@ -73,6 +79,7 @@ export async function PUT(request: NextRequest) {
     const { token } = await request.json();
 
     // Verify session
+    const redis = getRedis();
     const email = await redis.get(`admin-session:${sessionToken}`);
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
@@ -126,6 +133,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify session
+    const redis = getRedis();
     const email = await redis.get(`admin-session:${sessionToken}`);
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+function getRedis() {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Redis credentials not configured');
+  }
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+}
 
 // GET - List all sessions
 export async function GET(request: NextRequest) {
@@ -16,6 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify session
+    const redis = getRedis();
     const email = await redis.get(`admin-session:${sessionToken}`);
     if (!email) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
@@ -57,6 +63,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify session
+    const redis = getRedis();
     const email = await redis.get(`admin-session:${sessionToken}`);
     if (!email) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });

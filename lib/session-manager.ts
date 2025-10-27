@@ -2,11 +2,15 @@ import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
 import slugify from 'slugify';
 
-// Initialize Upstash Redis client
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+function getRedis() {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Redis credentials not configured');
+  }
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+}
 
 export interface DemoSession {
   subdomain: string;
@@ -58,6 +62,7 @@ export async function createSession(company: string): Promise<DemoSession> {
   };
 
   // Store session in Redis with TTL
+  const redis = getRedis();
   await redis.setex(`session:${subdomain}`, SESSION_TTL, JSON.stringify(session));
 
   return session;
@@ -67,6 +72,7 @@ export async function createSession(company: string): Promise<DemoSession> {
  * Retrieves a session by subdomain
  */
 export async function getSession(subdomain: string): Promise<DemoSession | null> {
+  const redis = getRedis();
   const data = await redis.get(`session:${subdomain}`);
 
   if (!data) {
@@ -108,6 +114,7 @@ export async function trackEvent(subdomain: string): Promise<void> {
   session.events += 1;
 
   // Update session with new event count
+  const redis = getRedis();
   await redis.setex(`session:${subdomain}`, SESSION_TTL, JSON.stringify(session));
 }
 
@@ -122,6 +129,7 @@ export async function storeBug(bug: Omit<BugEvent, 'id' | 'timestamp'>): Promise
   };
 
   // Store bug in a list for this subdomain
+  const redis = getRedis();
   await redis.lpush(`bugs:${bug.subdomain}`, JSON.stringify(bugEvent));
 
   // Update bug count in session
@@ -141,6 +149,7 @@ export async function storeBug(bug: Omit<BugEvent, 'id' | 'timestamp'>): Promise
  * Retrieves all bugs for a subdomain
  */
 export async function getBugs(subdomain: string): Promise<BugEvent[]> {
+  const redis = getRedis();
   const bugs = await redis.lrange(`bugs:${subdomain}`, 0, -1);
 
   if (!bugs || bugs.length === 0) {
@@ -156,6 +165,7 @@ export async function getBugs(subdomain: string): Promise<BugEvent[]> {
  * Deletes a session and all associated data
  */
 export async function deleteSession(subdomain: string): Promise<void> {
+  const redis = getRedis();
   await Promise.all([redis.del(`session:${subdomain}`), redis.del(`bugs:${subdomain}`)]);
 }
 
@@ -171,6 +181,7 @@ export async function extendSession(subdomain: string): Promise<void> {
 
   session.expiresAt = Date.now() + SESSION_TTL * 1000;
 
+  const redis = getRedis();
   await Promise.all([
     redis.setex(`session:${subdomain}`, SESSION_TTL, JSON.stringify(session)),
     redis.expire(`bugs:${subdomain}`, SESSION_TTL),

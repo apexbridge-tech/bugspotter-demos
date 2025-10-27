@@ -3,19 +3,17 @@ import bcrypt from 'bcryptjs';
 import speakeasy from 'speakeasy';
 import { Redis } from '@upstash/redis';
 
-// Log environment variables (first 20 chars only for security)
-console.log('[Login API] Redis URL:', process.env.UPSTASH_REDIS_REST_URL?.substring(0, 20) || 'MISSING');
-console.log('[Login API] Redis Token:', process.env.UPSTASH_REDIS_REST_TOKEN?.substring(0, 20) || 'MISSING');
-
-if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  console.error('[Login API] CRITICAL: Missing Redis credentials in environment variables');
-  console.error('[Login API] All env keys:', Object.keys(process.env).filter(k => k.includes('UPSTASH')));
+// Lazy initialization of Redis client to ensure env vars are loaded
+function getRedis() {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Redis credentials not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.');
+  }
+  
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
 }
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
 
 interface AdminUser {
   email: string;
@@ -41,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Get admin user
     console.log('[Login API] Looking up user:', email);
+    const redis = getRedis();
     const userData = await redis.get(`admin:${email}`);
     console.log('[Login API] User found:', !!userData);
     
@@ -125,6 +124,7 @@ export async function DELETE(request: NextRequest) {
     const sessionToken = request.headers.get('x-session-token');
 
     if (sessionToken) {
+      const redis = getRedis();
       await redis.del(`admin-session:${sessionToken}`);
     }
 
