@@ -72,10 +72,6 @@ export default function TalentFlowDemo() {
     };
     
     initializeInjector();
-      }
-    };
-    
-    initializeInjector();
   }, []);
 
   const handleUpload = () => {
