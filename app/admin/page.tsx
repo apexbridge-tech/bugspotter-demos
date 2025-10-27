@@ -50,7 +50,7 @@ export default function AdminPage() {
   const [bugs, setBugs] = useState<BugEvent[]>([]);
   const [bugStats, setBugStats] = useState<BugStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | '2fa'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | 'injector' | '2fa'>('sessions');
   const [error, setError] = useState('');
   const [showCreateBug, setShowCreateBug] = useState(false);
   const [useCustomSubdomain, setUseCustomSubdomain] = useState(false);
@@ -64,6 +64,10 @@ export default function AdminPage() {
     elementId: '',
     demo: 'kazbank' as 'kazbank' | 'talentflow' | 'quickmart',
   });
+
+  // BugInjector Configuration
+  const [injectorProbability, setInjectorProbability] = useState(30);
+  const [injectorEnabled, setInjectorEnabled] = useState(true);
 
   // 2FA Setup
   const [show2FASetup, setShow2FASetup] = useState(false);
@@ -447,6 +451,16 @@ export default function AdminPage() {
                 All Bugs ({bugs.length})
               </button>
               <button
+                onClick={() => setActiveTab('injector')}
+                className={`py-4 border-b-2 font-medium transition-colors ${
+                  activeTab === 'injector'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Bug Injector
+              </button>
+              <button
                 onClick={() => setActiveTab('2fa')}
                 className={`py-4 border-b-2 font-medium transition-colors ${
                   activeTab === '2fa'
@@ -460,7 +474,191 @@ export default function AdminPage() {
           </div>
 
           <div className="p-6">
-            {activeTab === '2fa' ? (
+            {activeTab === 'injector' ? (
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-gray-800 mb-2">Bug Injector Configuration</h2>
+                  <p className="text-gray-600">
+                    Configure how bugs are automatically triggered in your demo applications. The BugInjector
+                    runs on the client-side in KazBank, TalentFlow, and QuickMart demos.
+                  </p>
+                </div>
+
+                {/* Global Settings */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-2xl">⚙️</span>
+                    Global Settings
+                  </h3>
+
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Bug Injection Enabled
+                          </label>
+                          <p className="text-xs text-gray-500">
+                            Enable or disable automatic bug triggering across all demos
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={injectorEnabled}
+                            onChange={(e) => setInjectorEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Trigger Probability: {injectorProbability}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={injectorProbability}
+                        onChange={(e) => setInjectorProbability(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0% (Never)</span>
+                        <span>50% (Half the time)</span>
+                        <span>100% (Always)</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">
+                        {injectorProbability === 0 && '❌ Bugs will never trigger automatically'}
+                        {injectorProbability > 0 && injectorProbability <= 20 && '🟢 Low frequency - Rare bug occurrence'}
+                        {injectorProbability > 20 && injectorProbability <= 40 && '🟡 Medium frequency - Occasional bugs'}
+                        {injectorProbability > 40 && injectorProbability <= 70 && '🟠 High frequency - Frequent bugs'}
+                        {injectorProbability > 70 && '🔴 Very high frequency - Almost every click'}
+                      </p>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Tip:</strong> For sales demos, 30-40% probability works well to show bugs
+                        without overwhelming prospects. For testing, use 100%.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Demo-Specific Configuration */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-800 mb-4">Demo Applications</h3>
+
+                  {/* KazBank */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-3xl">🏦</span>
+                      <div>
+                        <h4 className="font-bold text-gray-800">KazBank - Banking Demo</h4>
+                        <p className="text-sm text-gray-600">Financial services application</p>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Active Bug Types:</span>
+                        <span className="font-medium">Network errors, Timeouts, Calculation errors</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Configured Elements:</span>
+                        <span className="font-medium">Transfer buttons, Login forms, Balance checks</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Status:</span>
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                          ACTIVE
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TalentFlow */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-3xl">👔</span>
+                      <div>
+                        <h4 className="font-bold text-gray-800">TalentFlow - HR Platform</h4>
+                        <p className="text-sm text-gray-600">Recruitment and applicant tracking</p>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Active Bug Types:</span>
+                        <span className="font-medium">Validation errors, Timeouts, Upload failures</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Configured Elements:</span>
+                        <span className="font-medium">Apply buttons, Resume uploads, Application forms</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Status:</span>
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                          ACTIVE
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* QuickMart */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-3xl">🛒</span>
+                      <div>
+                        <h4 className="font-bold text-gray-800">QuickMart - E-commerce</h4>
+                        <p className="text-sm text-gray-600">Online shopping platform</p>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Active Bug Types:</span>
+                        <span className="font-medium">Cart errors, Payment failures, Search crashes</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Configured Elements:</span>
+                        <span className="font-medium">Add to cart, Checkout, Search bar</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Status:</span>
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                          ACTIVE
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <span className="text-2xl">📝</span>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-yellow-900 mb-1">How BugInjector Works</h4>
+                      <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
+                        <li>Automatically attaches to interactive elements in demo apps</li>
+                        <li>Triggers bugs based on the probability you set above</li>
+                        <li>Generates realistic error messages and stack traces</li>
+                        <li>Reports all bugs to the API automatically</li>
+                        <li>Shows visual feedback (color flashes) when bugs occur</li>
+                        <li>Critical/High severity bugs display error overlays to prospects</li>
+                      </ul>
+                      <p className="text-sm text-yellow-800 mt-3">
+                        <strong>Note:</strong> These settings affect the client-side behavior. Changes take effect
+                        when prospects load a new demo session.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === '2fa' ? (
               <div className="max-w-2xl mx-auto">
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Two-Factor Authentication</h2>
 
