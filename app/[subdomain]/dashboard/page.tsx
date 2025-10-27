@@ -21,13 +21,17 @@ interface Bug {
 export default function DashboardPage() {
   const params = useParams();
   const subdomain = params.subdomain as string;
+  
+  // Extract session ID from subdomain (format: {demo}-{session} or just {session})
+  const sessionId = subdomain.match(/^(?:kazbank|talentflow|quickmart)-(.+)$/)?.[1] || subdomain;
+  
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
 
   const fetchBugs = useCallback(async () => {
     try {
-      const response = await fetch(`/api/bugs?subdomain=${subdomain}`);
+      const response = await fetch(`/api/bugs?subdomain=${sessionId}`);
       const data = await response.json();
       if (data.success) {
         setBugs(data.bugs);
@@ -37,7 +41,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [subdomain]);
+  }, [sessionId]);
 
   useEffect(() => {
     fetchBugs();
@@ -93,6 +97,14 @@ export default function DashboardPage() {
   };
 
   const groupedBugs = groupByDemo();
+
+  const getDemoUrl = (demo: string) => {
+    const fullSubdomain = `${demo}-${sessionId}`;
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `/${fullSubdomain}`;
+    }
+    return `https://${fullSubdomain}.demo.bugspotter.io`;
+  };
 
   if (loading) {
     return (
@@ -163,7 +175,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-bold text-gray-800 mb-4">Demo Sites</h2>
           <div className="grid md:grid-cols-3 gap-4">
             <a
-              href={`/${subdomain}/kazbank`}
+              href={getDemoUrl('kazbank')}
               className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -177,7 +189,7 @@ export default function DashboardPage() {
               </p>
             </a>
             <a
-              href={`/${subdomain}/talentflow`}
+              href={getDemoUrl('talentflow')}
               className="p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -191,7 +203,7 @@ export default function DashboardPage() {
               </p>
             </a>
             <a
-              href={`/${subdomain}/quickmart`}
+              href={getDemoUrl('quickmart')}
               className="p-4 border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">

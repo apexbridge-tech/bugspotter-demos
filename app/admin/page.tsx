@@ -909,12 +909,38 @@ export default function AdminPage() {
                         {sessions.map((session) => (
                           <tr key={session.subdomain} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                              <Link
-                                href={`/${session.subdomain}/dashboard`}
-                                className="text-blue-600 hover:underline"
-                              >
-                                {session.subdomain}
-                              </Link>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-gray-700">{session.subdomain}</div>
+                                <div className="flex gap-2 text-xs">
+                                  <Link
+                                    href={`/kazbank-${session.subdomain}`}
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    KazBank
+                                  </Link>
+                                  <span className="text-gray-400">•</span>
+                                  <Link
+                                    href={`/talentflow-${session.subdomain}`}
+                                    className="text-purple-600 hover:underline"
+                                  >
+                                    TalentFlow
+                                  </Link>
+                                  <span className="text-gray-400">•</span>
+                                  <Link
+                                    href={`/quickmart-${session.subdomain}`}
+                                    className="text-orange-600 hover:underline"
+                                  >
+                                    QuickMart
+                                  </Link>
+                                  <span className="text-gray-400">•</span>
+                                  <Link
+                                    href={`/kazbank-${session.subdomain}/dashboard`}
+                                    className="text-gray-600 hover:underline"
+                                  >
+                                    Dashboard
+                                  </Link>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700">{session.company}</td>
                             <td className="px-4 py-3 text-sm">
