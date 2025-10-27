@@ -7,11 +7,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { errorMessage, stackTrace, severity, elementId, demo, userAgent, screenshot } = body;
 
-    // Get session ID from header (set by middleware) or fallback to subdomain
-    const sessionId = request.headers.get('X-Session-ID');
-    const fullSubdomain = request.headers.get('X-Client-Subdomain');
+    // Get subdomain from header (set by middleware)
+    const subdomain = request.headers.get('X-Client-Subdomain');
 
-    if (!sessionId && !fullSubdomain) {
+    if (!subdomain) {
       // Try to get from request body or URL
       const urlSubdomain = new URL(request.url).searchParams.get('subdomain');
       const bodySubdomain = body.subdomain;
@@ -21,8 +20,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Use session ID for storage (without demo prefix)
-    const actualSubdomain = sessionId || fullSubdomain || body.subdomain;
+    const actualSubdomain = subdomain || body.subdomain;
 
     // Validate required fields
     if (!errorMessage || !severity || !demo) {

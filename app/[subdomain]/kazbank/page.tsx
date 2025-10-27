@@ -78,12 +78,12 @@ export default function KazBankDemo() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-md border-b-4 border-red-600">
+      <header className="bg-white shadow-md border-b-4 border-green-600">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-red-600 rounded flex items-center justify-center font-bold text-2xl text-white">
+                <div className="w-12 h-12 bg-green-600 rounded flex items-center justify-center font-bold text-2xl text-white">
                   БЦК
                 </div>
                 <div>
@@ -94,24 +94,24 @@ export default function KazBankDemo() {
             </div>
             <button
               id="mobile-menu-toggle"
-              className="lg:hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="lg:hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Menu
             </button>
             <nav className="hidden lg:flex gap-6">
-              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
                 Счета
               </a>
-              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
                 Переводы
               </a>
-              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
                 Карты
               </a>
-              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
                 Кредиты
               </a>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
                 Выход
               </button>
             </nav>
@@ -124,16 +124,16 @@ export default function KazBankDemo() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Account Overview */}
-            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-red-600">
+            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-green-600">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Мои счета</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-red-500 to-red-700 rounded-lg p-6 text-white shadow-lg">
-                  <p className="text-red-100 text-sm mb-2">Текущий счет</p>
+                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-lg p-6 text-white shadow-lg">
+                  <p className="text-green-100 text-sm mb-2">Текущий счет</p>
                   <p className="text-3xl font-bold">₸ 4,589,320</p>
-                  <p className="text-red-200 text-sm mt-2">KZ12 3456 7890 1234</p>
+                  <p className="text-green-200 text-sm mt-2">KZ12 3456 7890 1234</p>
                   <div className="mt-4 flex gap-2">
-                    <div className="text-xs bg-red-800 bg-opacity-50 px-2 py-1 rounded">VISA</div>
-                    <div className="text-xs bg-red-800 bg-opacity-50 px-2 py-1 rounded">Активна</div>
+                    <div className="text-xs bg-green-800 bg-opacity-50 px-2 py-1 rounded">VISA</div>
+                    <div className="text-xs bg-green-800 bg-opacity-50 px-2 py-1 rounded">Активна</div>
                   </div>
                 </div>
                 <div className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg p-6 text-white shadow-lg">
@@ -150,7 +150,7 @@ export default function KazBankDemo() {
             {/* Quick Transfer */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-red-600">💸</span>
+                <span className="text-green-600">💸</span>
                 Быстрый перевод
               </h2>
               <div className="space-y-4">
@@ -161,7 +161,7 @@ export default function KazBankDemo() {
                   <input
                     type="text"
                     placeholder="KZ__ ____ ____ ____"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -170,14 +170,14 @@ export default function KazBankDemo() {
                     <input
                       type="number"
                       placeholder="0.00"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₸</span>
                   </div>
                 </div>
                 <button
                   id="transfer-btn"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   Перевести
                 </button>
@@ -190,7 +190,7 @@ export default function KazBankDemo() {
                 <h2 className="text-xl font-bold text-gray-800">Последние операции</h2>
                 <button
                   id="download-statement"
-                  className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-1"
+                  className="text-green-600 hover:text-green-700 font-medium text-sm flex items-center gap-1"
                 >
                   <span>📄</span>
                   Выписка
@@ -225,12 +225,12 @@ export default function KazBankDemo() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Currency Converter */}
-            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-red-600">
+            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-green-600">
               <h3 className="font-bold text-gray-800 mb-4">Конвертер валют</h3>
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1 font-medium">Из</label>
-                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all">
+                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
                     <option>USD - Доллар США</option>
                     <option>EUR - Евро</option>
                     <option>KZT - Тенге</option>
@@ -239,7 +239,7 @@ export default function KazBankDemo() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1 font-medium">В</label>
-                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all">
+                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
                     <option>KZT - Тенге</option>
                     <option>EUR - Евро</option>
                     <option>USD - Доллар США</option>
@@ -251,12 +251,12 @@ export default function KazBankDemo() {
                   <input
                     type="number"
                     placeholder="1000"
-                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                   />
                 </div>
                 <button
                   id="convert-currency"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow-md"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow-md"
                 >
                   Конвертировать
                 </button>
@@ -271,15 +271,15 @@ export default function KazBankDemo() {
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="font-bold text-gray-800 mb-4">Быстрые действия</h3>
               <div className="space-y-2">
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 transition-colors border-2 border-gray-100 hover:border-green-200">
                   <div className="font-medium text-gray-800">💳 Оплата услуг</div>
                   <div className="text-xs text-gray-500">Коммунальные, интернет, ТВ</div>
                 </button>
-                <button id="login-submit" className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                <button id="login-submit" className="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 transition-colors border-2 border-gray-100 hover:border-green-200">
                   <div className="font-medium text-gray-800">🔐 Настройки карт</div>
                   <div className="text-xs text-gray-500">Управление картами</div>
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 transition-colors border-2 border-gray-100 hover:border-green-200">
                   <div className="font-medium text-gray-800">📞 Поддержка 24/7</div>
                   <div className="text-xs text-gray-500">Онлайн консультация</div>
                 </button>

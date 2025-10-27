@@ -27,16 +27,12 @@ export default function Home() {
         // Redirect to the demo subdomain
         const { subdomain } = data.session;
 
-        // Use new subdomain format: {demo}-{session}
-        // Default to KazBank for initial redirect
-        const demoSubdomain = `kazbank-${subdomain}`;
-
         // For local development
         if (window.location.hostname === 'localhost') {
-          window.location.href = `http://localhost:3000/${demoSubdomain}/dashboard`;
+          window.location.href = `http://localhost:3000/${subdomain}/dashboard`;
         } else {
           // For production with actual subdomains
-          window.location.href = `https://${demoSubdomain}.demo.bugspotter.io/dashboard`;
+          window.location.href = `https://${subdomain}.demo.bugspotter.io/dashboard`;
         }
       } else {
         setError(data.error || 'Failed to create demo session');
