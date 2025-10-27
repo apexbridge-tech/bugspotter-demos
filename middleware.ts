@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
   // - demo.bugspotter.io (main domain)
   // - {company}.demo.bugspotter.io (client-specific)
   // - localhost:3000 (development)
+  // - *.vercel.app (Vercel deployment)
 
   let subdomain: string | null = null;
 
@@ -17,8 +18,11 @@ export function middleware(request: NextRequest) {
   if (hostname.includes('localhost')) {
     // For local development, check for subdomain in query param or skip
     subdomain = url.searchParams.get('subdomain');
+  } else if (hostname.includes('vercel.app')) {
+    // For Vercel deployments, don't extract subdomain - they're all single domain
+    subdomain = null;
   } else {
-    // Production/staging subdomain extraction
+    // Production subdomain extraction
     const parts = hostname.split('.');
 
     // If we have more than 2 parts (e.g., company.demo.bugspotter.io = 4 parts)
@@ -28,7 +32,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Skip middleware for main domain (demo.bugspotter.io)
+  // Skip middleware for main domain
   if (!subdomain) {
     return NextResponse.next();
   }
