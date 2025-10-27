@@ -22,24 +22,41 @@ interface AdminUser {
 // POST - Login with email/password
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, totpToken } = await request.json();
+    console.log('[Login API] Request received');
+    const body = await request.json();
+    const { email, password, totpToken } = body;
+    console.log('[Login API] Email:', email);
+    console.log('[Login API] Has password:', !!password);
+    console.log('[Login API] Has TOTP token:', !!totpToken);
 
     if (!email || !password) {
+      console.log('[Login API] Missing email or password');
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
     // Get admin user
+    console.log('[Login API] Looking up user:', email);
     const userData = await redis.get(`admin:${email}`);
+    console.log('[Login API] User found:', !!userData);
+    
     if (!userData) {
+      console.log('[Login API] User not found in Redis');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const user: AdminUser =
       typeof userData === 'string' ? JSON.parse(userData) : (userData as AdminUser);
+    console.log('[Login API] User data parsed successfully');
+    console.log('[Login API] User has passwordHash:', !!user.passwordHash);
+    console.log('[Login API] User totpEnabled:', user.totpEnabled);
 
     // Verify password
+    console.log('[Login API] Verifying password...');
     const isValid = await bcrypt.compare(password, user.passwordHash);
+    console.log('[Login API] Password valid:', isValid);
+    
     if (!isValid) {
+      console.log('[Login API] Invalid password');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -66,21 +83,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate session token
+    console.log('[Login API] Generating session token...');
     const sessionToken = Buffer.from(
       `${email}:${Date.now()}:${Math.random().toString(36)}`
     ).toString('base64');
 
     // Store session
+    console.log('[Login API] Storing session in Redis...');
     await redis.setex(`admin-session:${sessionToken}`, 3600 * 8, email); // 8 hours
+    console.log('[Login API] Session stored successfully');
 
+    console.log('[Login API] Login successful for:', email);
     return NextResponse.json({
       success: true,
       sessionToken,
       email: user.email,
     });
   } catch (error) {
-    console.error('Login error:', error);
-    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    console.error('[Login API] ERROR:', error);
+    console.error('[Login API] Error type:', error instanceof Error ? 'Error' : typeof error);
+    console.error('[Login API] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('[Login API] Error stack:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       { 
         error: 'Login failed',
