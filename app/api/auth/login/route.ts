@@ -3,14 +3,19 @@ import bcrypt from 'bcryptjs';
 import speakeasy from 'speakeasy';
 import { Redis } from '@upstash/redis';
 
+// Log environment variables (first 20 chars only for security)
+console.log('[Login API] Redis URL:', process.env.UPSTASH_REDIS_REST_URL?.substring(0, 20) || 'MISSING');
+console.log('[Login API] Redis Token:', process.env.UPSTASH_REDIS_REST_TOKEN?.substring(0, 20) || 'MISSING');
+
+if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  console.error('[Login API] CRITICAL: Missing Redis credentials in environment variables');
+  console.error('[Login API] All env keys:', Object.keys(process.env).filter(k => k.includes('UPSTASH')));
+}
+
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL || '',
   token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
 });
-
-if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  console.error('Missing Redis credentials in environment variables');
-}
 
 interface AdminUser {
   email: string;
