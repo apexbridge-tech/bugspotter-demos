@@ -54,6 +54,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [showCreateBug, setShowCreateBug] = useState(false);
   const [useCustomSubdomain, setUseCustomSubdomain] = useState(false);
+  const [showCreateSession, setShowCreateSession] = useState(false);
 
   // Create Bug Form
   const [newBug, setNewBug] = useState({
@@ -70,6 +71,10 @@ export default function AdminPage() {
   const [injectorEnabled, setInjectorEnabled] = useState(true);
   const [injectorLoading, setInjectorLoading] = useState(false);
   const [injectorSaved, setInjectorSaved] = useState(false);
+
+  // Create Session Form
+  const [newSessionCompany, setNewSessionCompany] = useState('');
+  const [sessionCreating, setSessionCreating] = useState(false);
 
   // 2FA Setup
   const [show2FASetup, setShow2FASetup] = useState(false);
@@ -331,6 +336,39 @@ export default function AdminPage() {
       console.error('Save injector config error:', err);
     } finally {
       setInjectorLoading(false);
+    }
+  };
+
+  const createSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSessionCreating(true);
+
+    try {
+      const response = await fetch('/api/demo/create-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ company: newSessionCompany }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`Session created successfully!\nSubdomain: ${data.session.subdomain}\nCompany: ${data.session.company}`);
+        setShowCreateSession(false);
+        setNewSessionCompany('');
+        if (activeTab === 'sessions') {
+          await fetchSessions();
+        }
+      } else {
+        setError(data.error || 'Failed to create session');
+      }
+    } catch (err) {
+      setError('Failed to create session');
+      console.error('Create session error:', err);
+    } finally {
+      setSessionCreating(false);
     }
   };
 
@@ -821,12 +859,20 @@ export default function AdminPage() {
               <div>
                 <div className="mb-4 flex justify-between items-center">
                   <h2 className="text-lg font-bold text-gray-800">Active Sessions</h2>
-                  <button
-                    onClick={fetchSessions}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Refresh
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowCreateSession(true)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      + Create Session
+                    </button>
+                    <button
+                      onClick={fetchSessions}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Refresh
+                    </button>
+                  </div>
                 </div>
 
                 {sessions.length === 0 ? (
@@ -1171,6 +1217,67 @@ export default function AdminPage() {
                   onClick={() => {
                     setShowCreateBug(false);
                     setUseCustomSubdomain(false);
+                    setError('');
+                  }}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Session Modal */}
+      {showCreateSession && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Create New Session</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Create a new demo session for a company
+              </p>
+            </div>
+
+            <form onSubmit={createSession} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Company Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newSessionCompany}
+                  onChange={(e) => setNewSessionCompany(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., ACME Corp"
+                  required
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  A subdomain will be generated automatically
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={sessionCreating}
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+                >
+                  {sessionCreating ? 'Creating...' : 'Create Session'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateSession(false);
+                    setNewSessionCompany('');
                     setError('');
                   }}
                   className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
