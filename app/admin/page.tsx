@@ -53,6 +53,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | '2fa'>('sessions');
   const [error, setError] = useState('');
   const [showCreateBug, setShowCreateBug] = useState(false);
+  const [useCustomSubdomain, setUseCustomSubdomain] = useState(false);
 
   // Create Bug Form
   const [newBug, setNewBug] = useState({
@@ -258,6 +259,7 @@ export default function AdminPage() {
       if (data.success) {
         alert('Bug created successfully!');
         setShowCreateBug(false);
+        setUseCustomSubdomain(false);
         setNewBug({
           subdomain: '',
           errorMessage: '',
@@ -740,14 +742,55 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Subdomain <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={newBug.subdomain}
-                  onChange={(e) => setNewBug({ ...newBug, subdomain: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., acme-demo"
-                  required
-                />
+                
+                {!useCustomSubdomain && sessions.length > 0 ? (
+                  <div className="space-y-2">
+                    <select
+                      value={newBug.subdomain}
+                      onChange={(e) => setNewBug({ ...newBug, subdomain: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      required
+                    >
+                      <option value="">Select a session...</option>
+                      {sessions.map((session) => (
+                        <option key={session.subdomain} value={session.subdomain}>
+                          {session.subdomain} ({session.company})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setUseCustomSubdomain(true)}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      + Use custom subdomain instead
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={newBug.subdomain}
+                      onChange={(e) => setNewBug({ ...newBug, subdomain: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g., acme-demo"
+                      required
+                    />
+                    {sessions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseCustomSubdomain(false);
+                          setNewBug({ ...newBug, subdomain: '' });
+                        }}
+                        className="text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        ← Select from existing sessions
+                      </button>
+                    )}
+                  </div>
+                )}
+                
                 <p className="text-xs text-gray-500 mt-1">
                   The session subdomain where this bug should appear
                 </p>
@@ -856,6 +899,7 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => {
                     setShowCreateBug(false);
+                    setUseCustomSubdomain(false);
                     setError('');
                   }}
                   className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
