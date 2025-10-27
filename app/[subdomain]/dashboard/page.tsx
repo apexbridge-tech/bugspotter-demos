@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
   const [registeredBugs, setRegisteredBugs] = useState<any[]>([]);
+  const [sessionInfo, setSessionInfo] = useState<{ company?: string; createdAt?: number } | null>(null);
 
   const fetchBugs = useCallback(async () => {
     try {
@@ -41,6 +42,18 @@ export default function DashboardPage() {
       console.error('Error fetching bugs:', error);
     } finally {
       setLoading(false);
+    }
+  }, [sessionId]);
+
+  const fetchSessionInfo = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/demo/create-session?subdomain=${sessionId}`);
+      const data = await response.json();
+      if (data.success && data.session) {
+        setSessionInfo(data.session);
+      }
+    } catch (error) {
+      console.error('Error fetching session info:', error);
     }
   }, [sessionId]);
 
@@ -65,10 +78,11 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchBugs();
     fetchRegisteredBugs();
+    fetchSessionInfo();
     // Poll for new bugs every 5 seconds
     const interval = setInterval(fetchBugs, 5000);
     return () => clearInterval(interval);
-  }, [fetchBugs, fetchRegisteredBugs]);
+  }, [fetchBugs, fetchRegisteredBugs, fetchSessionInfo]);
 
   const getSeverityColor = (severity: string) => {
     const colors = {
@@ -145,7 +159,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">BugSpotter Dashboard</h1>
-              <p className="text-sm text-gray-600">Session: {subdomain}</p>
+              <p className="text-sm text-gray-600">
+                Session: {subdomain}
+                {sessionInfo?.company && ` • Company: ${sessionInfo.company}`}
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
