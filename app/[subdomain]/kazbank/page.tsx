@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { BugInjector } from '@/lib/bug-injector';
 
 export default function KazBankDemo() {

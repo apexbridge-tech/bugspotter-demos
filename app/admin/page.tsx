@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 

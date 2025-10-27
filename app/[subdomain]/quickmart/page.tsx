@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { BugInjector } from '@/lib/bug-injector';
 
+export const dynamic = 'force-dynamic';
+
 export default function QuickMartDemo() {
   const [cartCount, setCartCount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
