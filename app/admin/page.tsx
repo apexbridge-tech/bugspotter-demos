@@ -50,7 +50,7 @@ export default function AdminPage() {
   const [bugs, setBugs] = useState<BugEvent[]>([]);
   const [bugStats, setBugStats] = useState<BugStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | 'injector' | '2fa'>('sessions');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | 'injector' | 'registered-bugs' | '2fa'>('sessions');
   const [error, setError] = useState('');
   const [showCreateBug, setShowCreateBug] = useState(false);
   const [useCustomSubdomain, setUseCustomSubdomain] = useState(false);
@@ -75,6 +75,10 @@ export default function AdminPage() {
   // Create Session Form
   const [newSessionCompany, setNewSessionCompany] = useState('');
   const [sessionCreating, setSessionCreating] = useState(false);
+
+  // Registered Bugs
+  const [registeredBugs, setRegisteredBugs] = useState<any[]>([]);
+  const [registeredBugsStats, setRegisteredBugsStats] = useState<any>(null);
 
   // 2FA Setup
   const [show2FASetup, setShow2FASetup] = useState(false);
@@ -314,6 +318,23 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchRegisteredBugs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/injector/bugs');
+      const data = await response.json();
+      
+      if (data.success) {
+        setRegisteredBugs(data.bugs);
+        setRegisteredBugsStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching registered bugs:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const saveInjectorConfig = async () => {
     if (!sessionToken) return;
     
@@ -396,9 +417,11 @@ export default function AdminPage() {
         fetchBugs();
       } else if (activeTab === 'injector') {
         fetchInjectorConfig();
+      } else if (activeTab === 'registered-bugs') {
+        fetchRegisteredBugs();
       }
     }
-  }, [isAuthenticated, activeTab, fetchSessions, fetchBugs, fetchInjectorConfig]);
+  }, [isAuthenticated, activeTab, fetchSessions, fetchBugs, fetchInjectorConfig, fetchRegisteredBugs]);
 
   if (!isAuthenticated) {
     return (
@@ -558,6 +581,16 @@ export default function AdminPage() {
                 }`}
               >
                 Bug Injector
+              </button>
+              <button
+                onClick={() => setActiveTab('registered-bugs')}
+                className={`py-4 border-b-2 font-medium transition-colors ${
+                  activeTab === 'registered-bugs'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Registered Bugs ({registeredBugs.length})
               </button>
               <button
                 onClick={() => setActiveTab('2fa')}
@@ -774,6 +807,150 @@ export default function AdminPage() {
                         <strong>Note:</strong> These settings affect the client-side behavior. Changes take effect
                         when prospects load a new demo session.
                       </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === 'registered-bugs' ? (
+              <div className="max-w-6xl mx-auto">
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-gray-800 mb-2">Registered Bugs Catalog</h2>
+                  <p className="text-gray-600">
+                    All bugs configured in the BugInjector across demo applications with trigger instructions.
+                  </p>
+                </div>
+
+                {registeredBugsStats && (
+                  <div className="grid md:grid-cols-5 gap-4 mb-6">
+                    <div className="bg-gray-100 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Total Bugs</p>
+                      <p className="text-2xl font-bold text-gray-800">{registeredBugsStats.total}</p>
+                    </div>
+                    <div className="bg-blue-100 rounded-lg p-4">
+                      <p className="text-sm text-blue-700">KazBank</p>
+                      <p className="text-2xl font-bold text-blue-800">{registeredBugsStats.byDemo.kazbank}</p>
+                    </div>
+                    <div className="bg-purple-100 rounded-lg p-4">
+                      <p className="text-sm text-purple-700">TalentFlow</p>
+                      <p className="text-2xl font-bold text-purple-800">{registeredBugsStats.byDemo.talentflow}</p>
+                    </div>
+                    <div className="bg-orange-100 rounded-lg p-4">
+                      <p className="text-sm text-orange-700">QuickMart</p>
+                      <p className="text-2xl font-bold text-orange-800">{registeredBugsStats.byDemo.quickmart}</p>
+                    </div>
+                    <div className="bg-red-100 rounded-lg p-4">
+                      <p className="text-sm text-red-700">Critical/High</p>
+                      <p className="text-2xl font-bold text-red-800">
+                        {registeredBugsStats.bySeverity.critical + registeredBugsStats.bySeverity.high}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-gray-600 mt-4">Loading...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {['kazbank', 'talentflow', 'quickmart'].map((demo) => {
+                      const demoBugs = registeredBugs.filter((b) => b.demo === demo);
+                      if (demoBugs.length === 0) return null;
+
+                      const demoInfo: Record<string, any> = {
+                        kazbank: {
+                          name: 'KazBank',
+                          icon: '🏦',
+                          description: 'Banking & Financial Services',
+                        },
+                        talentflow: {
+                          name: 'TalentFlow',
+                          icon: '👔',
+                          description: 'HR & Recruitment Platform',
+                        },
+                        quickmart: {
+                          name: 'QuickMart',
+                          icon: '🛒',
+                          description: 'E-commerce Platform',
+                        },
+                      };
+
+                      const info = demoInfo[demo];
+
+                      return (
+                        <div key={demo} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">{info.icon}</span>
+                              <div>
+                                <h3 className="font-bold text-gray-800 text-lg">{info.name}</h3>
+                                <p className="text-sm text-gray-600">{info.description}</p>
+                              </div>
+                              <span className="ml-auto px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                                {demoBugs.length} bugs
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-gray-100">
+                            {demoBugs.map((bug: any, index: number) => (
+                              <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-start gap-4">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span
+                                        className={`px-2 py-1 rounded text-xs font-semibold ${getSeverityColor(
+                                          bug.severity
+                                        )}`}
+                                      >
+                                        {bug.severity.toUpperCase()}
+                                      </span>
+                                      <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-mono">
+                                        #{bug.elementId}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {bug.type}
+                                        {bug.delay && ` • ${bug.delay / 1000}s delay`}
+                                      </span>
+                                    </div>
+
+                                    <h4 className="font-semibold text-gray-800 mb-2">{bug.description}</h4>
+                                    <p className="text-sm text-gray-700 mb-3 font-medium">
+                                      📍 How to trigger: <span className="text-blue-600">{bug.triggerAction}</span>
+                                    </p>
+                                    
+                                    <details className="mt-3">
+                                      <summary className="text-sm text-gray-600 cursor-pointer hover:text-gray-800 font-medium">
+                                        📋 View Error Message
+                                      </summary>
+                                      <div className="mt-2 p-3 bg-gray-900 text-red-400 rounded text-sm font-mono">
+                                        {bug.message}
+                                      </div>
+                                    </details>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <span className="text-2xl">💡</span>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 mb-1">Using Registered Bugs in Demos</h4>
+                      <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                        <li>Each bug triggers with the probability set in Bug Injector settings ({injectorProbability}%)</li>
+                        <li>Bugs only fire when BugInjector is enabled in the configuration</li>
+                        <li>Click the specified element multiple times if bug doesn't trigger immediately</li>
+                        <li>Critical and High severity bugs show error overlays to prospects</li>
+                        <li>All triggered bugs are automatically reported to the "All Bugs" tab</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
