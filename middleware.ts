@@ -60,14 +60,25 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Skip middleware for static files and Next.js internals
+  // For API routes, just pass headers without rewriting
   if (
     url.pathname.startsWith('/_next') ||
     url.pathname.startsWith('/api') ||
     url.pathname.startsWith('/static') ||
     url.pathname.includes('.')
   ) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    
+    // Still set headers for API routes so they can access subdomain info
+    if (fullSubdomain) {
+      response.headers.set('X-Client-Subdomain', fullSubdomain);
+      if (demo) {
+        response.headers.set('X-Demo-Type', demo);
+      }
+      response.headers.set('X-Session-ID', session);
+    }
+    
+    return response;
   }
 
   // Rewrite path to /[subdomain]/... for dynamic routing
