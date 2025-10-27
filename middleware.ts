@@ -8,32 +8,50 @@ export function middleware(request: NextRequest) {
   // Extract subdomain from hostname
   // Expected formats:
   // - demo.bugspotter.io (main domain)
-  // - {company}.demo.bugspotter.io (client-specific)
+  // - {demo}-{session}.demo.bugspotter.io (e.g., kazbank-acme-demo.demo.bugspotter.io)
   // - localhost:3000 (development)
   // - *.vercel.app (Vercel deployment)
 
-  let subdomain: string | null = null;
+  let fullSubdomain: string | null = null;
+  let demo: string | null = null;
+  let session: string | null = null;
 
   // Handle localhost development
   if (hostname.includes('localhost')) {
     // For local development, check for subdomain in query param or skip
-    subdomain = url.searchParams.get('subdomain');
+    const subdomainParam = url.searchParams.get('subdomain');
+    if (subdomainParam) {
+      fullSubdomain = subdomainParam;
+      // Parse demo-session format
+      const match = subdomainParam.match(/^(kazbank|talentflow|quickmart)-(.+)$/);
+      if (match) {
+        demo = match[1];
+        session = match[2];
+      }
+    }
   } else if (hostname.includes('vercel.app')) {
     // For Vercel deployments, don't extract subdomain - they're all single domain
-    subdomain = null;
+    fullSubdomain = null;
   } else {
     // Production subdomain extraction
     const parts = hostname.split('.');
 
-    // If we have more than 2 parts (e.g., company.demo.bugspotter.io = 4 parts)
+    // If we have more than 2 parts (e.g., kazbank-acme-demo.demo.bugspotter.io = 4 parts)
     // and it's not just "demo.bugspotter.io"
     if (parts.length >= 3 && parts[0] !== 'demo') {
-      subdomain = parts[0];
+      fullSubdomain = parts[0];
+      
+      // Parse {demo}-{session} format (e.g., kazbank-acme-demo)
+      const match = fullSubdomain.match(/^(kazbank|talentflow|quickmart)-(.+)$/);
+      if (match) {
+        demo = match[1];
+        session = match[2];
+      }
     }
   }
 
-  // Skip middleware for main domain
-  if (!subdomain) {
+  // Skip middleware for main domain or invalid format
+  if (!fullSubdomain || !demo || !session) {
     return NextResponse.next();
   }
 
@@ -49,13 +67,15 @@ export function middleware(request: NextRequest) {
 
   // Rewrite path to /[subdomain]/... for dynamic routing
   const newUrl = url.clone();
-  newUrl.pathname = `/${subdomain}${url.pathname}`;
+  newUrl.pathname = `/${fullSubdomain}${url.pathname}`;
 
   // Create response with rewrite
   const response = NextResponse.rewrite(newUrl);
 
-  // Pass subdomain in headers for server components to access
-  response.headers.set('X-Client-Subdomain', subdomain);
+  // Pass subdomain info in headers for server components to access
+  response.headers.set('X-Client-Subdomain', fullSubdomain);
+  response.headers.set('X-Demo-Type', demo);
+  response.headers.set('X-Session-ID', session);
 
   return response;
 }

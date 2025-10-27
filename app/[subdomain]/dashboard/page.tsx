@@ -99,8 +99,11 @@ export default function DashboardPage() {
   const groupedBugs = groupByDemo();
 
   const getDemoUrl = (demo: string) => {
-    const fullPath = `${demo}-${sessionId}`;
-    return `/${fullPath}`;
+    const fullSubdomain = `${demo}-${sessionId}`;
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `/${fullSubdomain}`;
+    }
+    return `https://${fullSubdomain}.demo.bugspotter.io`;
   };
 
   if (loading) {

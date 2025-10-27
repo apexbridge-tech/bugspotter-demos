@@ -86,8 +86,11 @@ export default function AdminPage() {
 
   // Helper function to generate proper demo URLs
   const getDemoUrl = (demo: string, sessionId: string, path: string = '') => {
-    const fullPath = `${demo}-${sessionId}`;
-    return `/${fullPath}${path}`;
+    const fullSubdomain = `${demo}-${sessionId}`;
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `/${fullSubdomain}${path}`;
+    }
+    return `https://${fullSubdomain}.demo.bugspotter.io${path}`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
