@@ -40,7 +40,7 @@ async function createAdmin() {
     const adminUser = {
       email,
       passwordHash,
-      twoFactorEnabled: false,
+      totpEnabled: false,
       createdAt: Date.now(),
     };
 
