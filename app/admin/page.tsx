@@ -52,6 +52,17 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | '2fa'>('sessions');
   const [error, setError] = useState('');
+  const [showCreateBug, setShowCreateBug] = useState(false);
+
+  // Create Bug Form
+  const [newBug, setNewBug] = useState({
+    subdomain: '',
+    errorMessage: '',
+    stackTrace: '',
+    severity: 'medium' as 'low' | 'medium' | 'high' | 'critical',
+    elementId: '',
+    demo: 'kazbank' as 'kazbank' | 'talentflow' | 'quickmart',
+  });
 
   // 2FA Setup
   const [show2FASetup, setShow2FASetup] = useState(false);
@@ -224,6 +235,46 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error deleting session:', error);
+    }
+  };
+
+  const createBug = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const response = await fetch('/api/bugs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...newBug,
+          userAgent: navigator.userAgent,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Bug created successfully!');
+        setShowCreateBug(false);
+        setNewBug({
+          subdomain: '',
+          errorMessage: '',
+          stackTrace: '',
+          severity: 'medium',
+          elementId: '',
+          demo: 'kazbank',
+        });
+        if (activeTab === 'bugs') {
+          await fetchBugs();
+        }
+      } else {
+        setError(data.error || 'Failed to create bug');
+      }
+    } catch (err) {
+      setError('Failed to create bug');
+      console.error('Create bug error:', err);
     }
   };
 
@@ -578,12 +629,20 @@ export default function AdminPage() {
               <div>
                 <div className="mb-6 flex justify-between items-center">
                   <h2 className="text-lg font-bold text-gray-800">All Bugs</h2>
-                  <button
-                    onClick={fetchBugs}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Refresh
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowCreateBug(true)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      + Create Bug
+                    </button>
+                    <button
+                      onClick={fetchBugs}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Refresh
+                    </button>
+                  </div>
                 </div>
 
                 {bugStats && (
@@ -664,6 +723,150 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Bug Modal */}
+      {showCreateBug && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Create New Bug</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Manually inject a bug into a demo session for testing purposes
+              </p>
+            </div>
+
+            <form onSubmit={createBug} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subdomain <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newBug.subdomain}
+                  onChange={(e) => setNewBug({ ...newBug, subdomain: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., acme-demo"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The session subdomain where this bug should appear
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Demo Site <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newBug.demo}
+                    onChange={(e) =>
+                      setNewBug({
+                        ...newBug,
+                        demo: e.target.value as 'kazbank' | 'talentflow' | 'quickmart',
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  >
+                    <option value="kazbank">KazBank (Banking)</option>
+                    <option value="talentflow">TalentFlow (HR)</option>
+                    <option value="quickmart">QuickMart (E-commerce)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Severity <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newBug.severity}
+                    onChange={(e) =>
+                      setNewBug({
+                        ...newBug,
+                        severity: e.target.value as 'low' | 'medium' | 'high' | 'critical',
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Error Message <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newBug.errorMessage}
+                  onChange={(e) => setNewBug({ ...newBug, errorMessage: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., Payment processing failed - Card declined"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Element ID (optional)
+                </label>
+                <input
+                  type="text"
+                  value={newBug.elementId}
+                  onChange={(e) => setNewBug({ ...newBug, elementId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., checkout-btn"
+                />
+                <p className="text-xs text-gray-500 mt-1">The HTML element ID that triggered the bug</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Stack Trace (optional)
+                </label>
+                <textarea
+                  value={newBug.stackTrace}
+                  onChange={(e) => setNewBug({ ...newBug, stackTrace: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                  placeholder="Error: Payment declined&#10;    at processPayment (payment.ts:45)&#10;    at handleCheckout (checkout.ts:123)"
+                  rows={4}
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Create Bug
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateBug(false);
+                    setError('');
+                  }}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
