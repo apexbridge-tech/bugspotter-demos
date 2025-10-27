@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
+  const [registeredBugs, setRegisteredBugs] = useState<any[]>([]);
 
   const fetchBugs = useCallback(async () => {
     try {
@@ -43,12 +44,31 @@ export default function DashboardPage() {
     }
   }, [sessionId]);
 
+  const fetchRegisteredBugs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/injector/bugs');
+      const data = await response.json();
+      if (data.success) {
+        setRegisteredBugs(data.bugs);
+      }
+    } catch (error) {
+      console.error('Error fetching registered bugs:', error);
+    }
+  }, []);
+
+  const getBugInfo = (bug: Bug) => {
+    return registeredBugs.find(
+      (rb) => rb.demo === bug.demo && rb.elementId === bug.elementId
+    );
+  };
+
   useEffect(() => {
     fetchBugs();
+    fetchRegisteredBugs();
     // Poll for new bugs every 5 seconds
     const interval = setInterval(fetchBugs, 5000);
     return () => clearInterval(interval);
-  }, [fetchBugs]);
+  }, [fetchBugs, fetchRegisteredBugs]);
 
   const getSeverityColor = (severity: string) => {
     const colors = {
@@ -279,11 +299,16 @@ export default function DashboardPage() {
           onClick={() => setSelectedBug(null)}
         >
           <div
-            className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto"
+            className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-800">Bug Details</h3>
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">Bug Details</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Captured {new Date(selectedBug.timestamp).toLocaleString()}
+                </p>
+              </div>
               <button
                 onClick={() => setSelectedBug(null)}
                 className="text-gray-500 hover:text-gray-700"
@@ -298,57 +323,130 @@ export default function DashboardPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6">
+              {/* Bug Info from Registry */}
+              {(() => {
+                const bugInfo = getBugInfo(selectedBug);
+                return bugInfo ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">ℹ️</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-blue-900 mb-2">{bugInfo.description}</h4>
+                        <p className="text-sm text-blue-800 mb-2">
+                          <strong>How to reproduce:</strong> {bugInfo.triggerAction}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-blue-700">
+                          <span className="px-2 py-1 bg-blue-200 rounded">Type: {bugInfo.type}</span>
+                          {bugInfo.delay && (
+                            <span className="px-2 py-1 bg-blue-200 rounded">
+                              Delay: {bugInfo.delay / 1000}s
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Error Message */}
               <div>
-                <label className="text-sm font-medium text-gray-600">Error Message</label>
-                <p className="mt-1 text-gray-800 font-mono text-sm bg-red-50 p-3 rounded border border-red-200">
-                  {selectedBug.errorMessage}
-                </p>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Error Message</label>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800 font-mono text-sm">{selectedBug.errorMessage}</p>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Metadata Grid */}
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Severity</label>
-                  <p
-                    className={`mt-1 inline-block px-3 py-1 rounded text-sm font-semibold border ${getSeverityColor(selectedBug.severity)}`}
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">Severity</label>
+                  <span
+                    className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold border ${getSeverityColor(selectedBug.severity)}`}
                   >
                     {selectedBug.severity.toUpperCase()}
-                  </p>
+                  </span>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Demo Site</label>
-                  <p
-                    className={`mt-1 inline-block px-3 py-1 rounded text-sm font-semibold ${getDemoColor(selectedBug.demo)}`}
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">Demo Site</label>
+                  <span
+                    className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${getDemoColor(selectedBug.demo)}`}
                   >
                     {selectedBug.demo.toUpperCase()}
-                  </p>
+                  </span>
                 </div>
+                {selectedBug.elementId && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Element ID
+                    </label>
+                    <span className="inline-block px-3 py-1.5 bg-gray-100 text-gray-800 rounded-lg font-mono text-sm">
+                      #{selectedBug.elementId}
+                    </span>
+                  </div>
+                )}
               </div>
-              {selectedBug.elementId && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Element ID</label>
-                  <p className="mt-1 text-gray-800 font-mono text-sm">#{selectedBug.elementId}</p>
-                </div>
-              )}
-              <div>
-                <label className="text-sm font-medium text-gray-600">Timestamp</label>
-                <p className="mt-1 text-gray-800">
-                  {new Date(selectedBug.timestamp).toLocaleString()}
-                </p>
-              </div>
+
+              {/* Stack Trace */}
               {selectedBug.stackTrace && (
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Stack Trace</label>
-                  <pre className="mt-1 text-xs bg-gray-900 text-green-400 p-4 rounded overflow-x-auto">
-                    {selectedBug.stackTrace}
-                  </pre>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Stack Trace
+                  </label>
+                  <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+{selectedBug.stackTrace}</pre>
                 </div>
               )}
-              {selectedBug.userAgent && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">User Agent</label>
-                  <p className="mt-1 text-xs text-gray-600 break-all">{selectedBug.userAgent}</p>
+
+              {/* Technical Details */}
+              <details className="border border-gray-200 rounded-lg">
+                <summary className="px-4 py-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                  Technical Details
+                </summary>
+                <div className="p-4 border-t border-gray-200 space-y-3 bg-gray-50">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">
+                      Timestamp
+                    </label>
+                    <p className="text-sm text-gray-800 font-mono">
+                      {new Date(selectedBug.timestamp).toISOString()}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">Bug ID</label>
+                    <p className="text-sm text-gray-800 font-mono">{selectedBug.id}</p>
+                  </div>
+                  {selectedBug.userAgent && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 block mb-1">
+                        User Agent
+                      </label>
+                      <p className="text-xs text-gray-700 break-all font-mono">
+                        {selectedBug.userAgent}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </details>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <a
+                  href={getDemoUrl(selectedBug.demo)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-center transition-colors"
+                >
+                  Visit {selectedBug.demo.charAt(0).toUpperCase() + selectedBug.demo.slice(1)} Demo
+                </a>
+                <button
+                  onClick={() => setSelectedBug(null)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
