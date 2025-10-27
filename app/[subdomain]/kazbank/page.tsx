@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 export const dynamic = 'force-dynamic';
 import { BugInjector } from '@/lib/bug-injector';
 
-type Language = 'en' | 'kk';
+type Language = 'en' | 'kk' | 'ru';
 
 const translations = {
   en: {
@@ -86,6 +86,46 @@ const translations = {
     usd: 'USD - АҚШ доллары',
     eur: 'EUR - Евро',
     kzt: 'KZT - Теңге',
+    rub: 'RUB - Рубль',
+  },
+  ru: {
+    tagline: 'Ваш надежный банковский партнер',
+    menu: 'Меню',
+    accounts: 'Счета',
+    transfers: 'Переводы',
+    cards: 'Карты',
+    loans: 'Кредиты',
+    logout: 'Выход',
+    myAccounts: 'Мои счета',
+    currentAccount: 'Текущий счет',
+    active: 'Активна',
+    savingsAccount: 'Сберегательный счет',
+    perAnnum: 'годовых',
+    quickTransfer: 'Быстрый перевод',
+    recipientAccount: 'Счет получателя',
+    amount: 'Сумма',
+    transfer: 'Перевести',
+    recentTransactions: 'Последние операции',
+    statement: 'Выписка',
+    salary: 'Зарплата',
+    currencyConverter: 'Конвертер валют',
+    from: 'Из',
+    to: 'В',
+    convert: 'Конвертировать',
+    exchangeRate: 'Курс обмена',
+    quickActions: 'Быстрые действия',
+    payBills: 'Оплата услуг',
+    utilities: 'Коммунальные, интернет, ТВ',
+    cardSettings: 'Настройки карт',
+    manageCards: 'Управление картами',
+    support: 'Поддержка 24/7',
+    onlineConsultation: 'Онлайн консультация',
+    securityTest: 'Тест безопасности',
+    twoFACode: '2FA код',
+    verify2FA: 'Проверить 2FA',
+    usd: 'USD - Доллар США',
+    eur: 'EUR - Евро',
+    kzt: 'KZT - Тенге',
     rub: 'RUB - Рубль',
   },
 };
@@ -191,6 +231,16 @@ export default function KazBankDemo() {
                   }`}
                 >
                   EN
+                </button>
+                <button
+                  onClick={() => setLanguage('ru')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    language === 'ru'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  RU
                 </button>
                 <button
                   onClick={() => setLanguage('kk')}
@@ -310,10 +360,26 @@ export default function KazBankDemo() {
               </div>
               <div className="space-y-3">
                 {[
-                  { name: 'Kaspi.kz', amount: '-₸ 28,900', date: language === 'en' ? 'Oct 25' : '25 қаз' },
-                  { name: t.salary, amount: '+₸ 520,000', date: language === 'en' ? 'Oct 24' : '24 қаз' },
-                  { name: 'Magnum', amount: '-₸ 12,340', date: language === 'en' ? 'Oct 23' : '23 қаз' },
-                  { name: language === 'en' ? 'Almaty Energy' : 'Алматы Энерго', amount: '-₸ 8,500', date: language === 'en' ? 'Oct 22' : '22 қаз' },
+                  { 
+                    name: 'Kaspi.kz', 
+                    amount: '-₸ 28,900', 
+                    date: language === 'en' ? 'Oct 25' : language === 'ru' ? '25 окт' : '25 қаз' 
+                  },
+                  { 
+                    name: t.salary, 
+                    amount: '+₸ 520,000', 
+                    date: language === 'en' ? 'Oct 24' : language === 'ru' ? '24 окт' : '24 қаз' 
+                  },
+                  { 
+                    name: 'Magnum', 
+                    amount: '-₸ 12,340', 
+                    date: language === 'en' ? 'Oct 23' : language === 'ru' ? '23 окт' : '23 қаз' 
+                  },
+                  { 
+                    name: language === 'en' ? 'Almaty Energy' : language === 'ru' ? 'Алматы Энерго' : 'Алматы Энерго', 
+                    amount: '-₸ 8,500', 
+                    date: language === 'en' ? 'Oct 22' : language === 'ru' ? '22 окт' : '22 қаз' 
+                  },
                 ].map((tx, i) => (
                   <div
                     key={i}
