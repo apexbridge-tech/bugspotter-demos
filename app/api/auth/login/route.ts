@@ -8,6 +8,10 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
 });
 
+if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  console.error('Missing Redis credentials in environment variables');
+}
+
 interface AdminUser {
   email: string;
   passwordHash: string;
@@ -76,7 +80,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    return NextResponse.json(
+      { 
+        error: 'Login failed',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined 
+      }, 
+      { status: 500 }
+    );
   }
 }
 
