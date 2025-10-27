@@ -97,6 +97,13 @@ export default function AdminPage() {
     return `https://${fullSubdomain}.demo.bugspotter.io${path}`;
   };
 
+  const getDashboardUrl = (sessionId: string) => {
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `/${sessionId}/dashboard`;
+    }
+    return `https://${sessionId}.demo.bugspotter.io/dashboard`;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -1126,7 +1133,7 @@ export default function AdminPage() {
                                   </a>
                                   <span className="text-gray-400">•</span>
                                   <a
-                                    href={getDemoUrl('kazbank', session.subdomain, '/dashboard')}
+                                    href={getDashboardUrl(session.subdomain)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-gray-600 hover:underline"

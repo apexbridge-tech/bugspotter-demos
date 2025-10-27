@@ -42,16 +42,21 @@ export function middleware(request: NextRequest) {
       fullSubdomain = parts[0];
       
       // Parse {demo}-{session} format (e.g., kazbank-acme-demo)
-      const match = fullSubdomain.match(/^(kazbank|talentflow|quickmart)-(.+)$/);
-      if (match) {
-        demo = match[1];
-        session = match[2];
+      const demoMatch = fullSubdomain.match(/^(kazbank|talentflow|quickmart)-(.+)$/);
+      if (demoMatch) {
+        demo = demoMatch[1];
+        session = demoMatch[2];
+      } else {
+        // If no demo prefix, this is just a session ID (e.g., alex-g5po.demo.bugspotter.io)
+        // This format is used for dashboard access
+        session = fullSubdomain;
+        demo = null; // No specific demo, this is for dashboard/multi-demo access
       }
     }
   }
 
   // Skip middleware for main domain or invalid format
-  if (!fullSubdomain || !demo || !session) {
+  if (!fullSubdomain || !session) {
     return NextResponse.next();
   }
 
@@ -74,7 +79,9 @@ export function middleware(request: NextRequest) {
 
   // Pass subdomain info in headers for server components to access
   response.headers.set('X-Client-Subdomain', fullSubdomain);
-  response.headers.set('X-Demo-Type', demo);
+  if (demo) {
+    response.headers.set('X-Demo-Type', demo);
+  }
   response.headers.set('X-Session-ID', session);
 
   return response;
