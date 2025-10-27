@@ -10,52 +10,69 @@ export default function QuickMartDemo() {
   const [promoApplied, setPromoApplied] = useState(false);
 
   useEffect(() => {
-    // Initialize bug injector
-    const injector = new BugInjector(0.3);
+    const initializeInjector = async () => {
+      try {
+        const response = await fetch('/api/injector/config');
+        const data = await response.json();
+        
+        const config = data.success && data.config ? data.config : { enabled: true, probability: 30 };
+        
+        if (!config.enabled) {
+          console.log('[BugInjector] Disabled by admin');
+          return;
+        }
+        
+        const injector = new BugInjector(config.probability / 100);
 
-    // Register bugs
-    injector.registerBug({
-      type: 'duplicate',
-      elementId: 'add-to-cart-1',
-      message: 'Cart race condition: Item added twice due to rapid double-click',
-      severity: 'medium',
-      demo: 'quickmart',
-    });
+        // Register bugs
+        injector.registerBug({
+          type: 'duplicate',
+          elementId: 'add-to-cart-1',
+          message: 'Cart race condition: Item added twice due to rapid double-click',
+          severity: 'medium',
+          demo: 'quickmart',
+        });
 
-    injector.registerBug({
-      type: 'freeze',
-      elementId: 'checkout-btn',
-      message: 'Payment processor freeze: Gateway connection timeout after 30 seconds',
-      severity: 'critical',
-      demo: 'quickmart',
-      delay: 2000,
-    });
+        injector.registerBug({
+          type: 'freeze',
+          elementId: 'checkout-btn',
+          message: 'Payment processor freeze: Gateway connection timeout after 30 seconds',
+          severity: 'critical',
+          demo: 'quickmart',
+          delay: 2000,
+        });
 
-    injector.registerBug({
-      type: 'crash',
-      elementId: 'search-products',
-      message: 'Search parser crashed: Special character "$" caused unhandled exception',
-      severity: 'high',
-      demo: 'quickmart',
-    });
+        injector.registerBug({
+          type: 'crash',
+          elementId: 'search-products',
+          message: 'Search parser crashed: Special character "$" caused unhandled exception',
+          severity: 'high',
+          demo: 'quickmart',
+        });
 
-    injector.registerBug({
-      type: 'network-error',
-      elementId: 'product-image-1',
-      message: 'Image lazy load failed: CDN timeout for product-image-12345.jpg',
-      severity: 'low',
-      demo: 'quickmart',
-    });
+        injector.registerBug({
+          type: 'network-error',
+          elementId: 'product-image-1',
+          message: 'Image lazy load failed: CDN timeout for product-image-12345.jpg',
+          severity: 'low',
+          demo: 'quickmart',
+        });
 
-    injector.registerBug({
-      type: 'validation-error',
-      elementId: 'apply-promo',
-      message: 'Promo code validation failed: "DEMO50" exists but discount not calculated',
-      severity: 'high',
-      demo: 'quickmart',
-    });
+        injector.registerBug({
+          type: 'validation-error',
+          elementId: 'apply-promo',
+          message: 'Promo code validation failed: "DEMO50" exists but discount not calculated',
+          severity: 'high',
+          demo: 'quickmart',
+        });
 
-    injector.initialize();
+        injector.initialize();
+      } catch (error) {
+        console.error('[BugInjector] Failed to load config:', error);
+      }
+    };
+    
+    initializeInjector();
   }, []);
 
   const handleAddToCart = () => {

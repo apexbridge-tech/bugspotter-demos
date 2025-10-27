@@ -68,6 +68,8 @@ export default function AdminPage() {
   // BugInjector Configuration
   const [injectorProbability, setInjectorProbability] = useState(30);
   const [injectorEnabled, setInjectorEnabled] = useState(true);
+  const [injectorLoading, setInjectorLoading] = useState(false);
+  const [injectorSaved, setInjectorSaved] = useState(false);
 
   // 2FA Setup
   const [show2FASetup, setShow2FASetup] = useState(false);
@@ -284,6 +286,54 @@ export default function AdminPage() {
     }
   };
 
+  const fetchInjectorConfig = useCallback(async () => {
+    try {
+      const response = await fetch('/api/injector/config');
+      const data = await response.json();
+      
+      if (data.success && data.config) {
+        setInjectorEnabled(data.config.enabled);
+        setInjectorProbability(data.config.probability);
+      }
+    } catch (error) {
+      console.error('Error fetching injector config:', error);
+    }
+  }, []);
+
+  const saveInjectorConfig = async () => {
+    if (!sessionToken) return;
+    
+    setInjectorLoading(true);
+    setInjectorSaved(false);
+    
+    try {
+      const response = await fetch('/api/injector/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-token': sessionToken,
+        },
+        body: JSON.stringify({
+          enabled: injectorEnabled,
+          probability: injectorProbability,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setInjectorSaved(true);
+        setTimeout(() => setInjectorSaved(false), 3000);
+      } else {
+        setError(data.error || 'Failed to save configuration');
+      }
+    } catch (err) {
+      setError('Failed to save configuration');
+      console.error('Save injector config error:', err);
+    } finally {
+      setInjectorLoading(false);
+    }
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('admin-session');
     if (saved) {
@@ -297,9 +347,11 @@ export default function AdminPage() {
         fetchSessions();
       } else if (activeTab === 'bugs') {
         fetchBugs();
+      } else if (activeTab === 'injector') {
+        fetchInjectorConfig();
       }
     }
-  }, [isAuthenticated, activeTab, fetchSessions, fetchBugs]);
+  }, [isAuthenticated, activeTab, fetchSessions, fetchBugs, fetchInjectorConfig]);
 
   if (!isAuthenticated) {
     return (
@@ -547,6 +599,27 @@ export default function AdminPage() {
                         without overwhelming prospects. For testing, use 100%.
                       </p>
                     </div>
+
+                    <button
+                      onClick={saveInjectorConfig}
+                      disabled={injectorLoading}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      {injectorLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Saving...
+                        </>
+                      ) : injectorSaved ? (
+                        <>
+                          ✓ Saved Successfully!
+                        </>
+                      ) : (
+                        <>
+                          💾 Save Configuration
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 

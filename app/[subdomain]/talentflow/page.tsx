@@ -9,52 +9,73 @@ export default function TalentFlowDemo() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    // Initialize bug injector
-    const injector = new BugInjector(0.3);
+    const initializeInjector = async () => {
+      try {
+        const response = await fetch('/api/injector/config');
+        const data = await response.json();
+        
+        const config = data.success && data.config ? data.config : { enabled: true, probability: 30 };
+        
+        if (!config.enabled) {
+          console.log('[BugInjector] Disabled by admin');
+          return;
+        }
+        
+        const injector = new BugInjector(config.probability / 100);
 
-    // Register bugs
-    injector.registerBug({
-      type: 'crash',
-      elementId: 'search-candidates',
-      message: 'Search query parser error: Unexpected token "senior" at position 0',
-      severity: 'high',
-      demo: 'talentflow',
-    });
+        // Register bugs
+        injector.registerBug({
+          type: 'crash',
+          elementId: 'search-candidates',
+          message: 'Search query parser error: Unexpected token "senior" at position 0',
+          severity: 'high',
+          demo: 'talentflow',
+        });
 
-    injector.registerBug({
-      type: 'freeze',
-      elementId: 'upload-resume',
-      message: 'File upload stalled: Progress frozen at 99% for resume.pdf',
-      severity: 'critical',
-      demo: 'talentflow',
-      delay: 3000,
-    });
+        injector.registerBug({
+          type: 'freeze',
+          elementId: 'upload-resume',
+          message: 'File upload stalled: Progress frozen at 99% for resume.pdf',
+          severity: 'critical',
+          demo: 'talentflow',
+          delay: 3000,
+        });
 
-    injector.registerBug({
-      type: 'calculation-error',
-      elementId: 'schedule-interview',
-      message: 'Timezone conversion failed: Invalid offset calculation for PST to EST',
-      severity: 'high',
-      demo: 'talentflow',
-    });
+        injector.registerBug({
+          type: 'calculation-error',
+          elementId: 'schedule-interview',
+          message: 'Timezone conversion failed: Invalid offset calculation for PST to EST',
+          severity: 'high',
+          demo: 'talentflow',
+        });
 
-    injector.registerBug({
-      type: 'duplicate',
-      elementId: 'send-bulk-email',
-      message: 'Email queue race condition: Duplicate messages sent to 47 candidates',
-      severity: 'critical',
-      demo: 'talentflow',
-    });
+        injector.registerBug({
+          type: 'duplicate',
+          elementId: 'send-bulk-email',
+          message: 'Email queue race condition: Duplicate messages sent to 47 candidates',
+          severity: 'critical',
+          demo: 'talentflow',
+        });
 
-    injector.registerBug({
-      type: 'corruption',
-      elementId: 'export-excel',
-      message: 'Excel export corrupted: Invalid cell format in candidate data export',
-      severity: 'medium',
-      demo: 'talentflow',
-    });
+        injector.registerBug({
+          type: 'corruption',
+          elementId: 'export-excel',
+          message: 'Excel export corrupted: Invalid cell format in candidate data export',
+          severity: 'medium',
+          demo: 'talentflow',
+        });
 
-    injector.initialize();
+        injector.initialize();
+      } catch (error) {
+        console.error('[BugInjector] Failed to load config:', error);
+      }
+    };
+    
+    initializeInjector();
+      }
+    };
+    
+    initializeInjector();
   }, []);
 
   const handleUpload = () => {

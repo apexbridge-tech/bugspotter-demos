@@ -7,53 +7,72 @@ import { BugInjector } from '@/lib/bug-injector';
 
 export default function KazBankDemo() {
   useEffect(() => {
-    // Initialize bug injector
-    const injector = new BugInjector(0.3); // 30% probability
+    // Fetch injector configuration and initialize
+    const initializeInjector = async () => {
+      try {
+        const response = await fetch('/api/injector/config');
+        const data = await response.json();
+        
+        const config = data.success && data.config ? data.config : { enabled: true, probability: 30 };
+        
+        // Don't initialize if disabled
+        if (!config.enabled) {
+          console.log('[BugInjector] Disabled by admin');
+          return;
+        }
+        
+        const injector = new BugInjector(config.probability / 100);
 
-    // Register bugs
-    injector.registerBug({
-      type: 'timeout',
-      elementId: 'transfer-btn',
-      message: 'Transaction timeout: Unable to complete transfer after 5 seconds',
-      severity: 'high',
-      demo: 'kazbank',
-      delay: 5000, // 5 second delay
-    });
+        // Register bugs
+        injector.registerBug({
+          type: 'timeout',
+          elementId: 'transfer-btn',
+          message: 'Transaction timeout: Unable to complete transfer after 5 seconds',
+          severity: 'high',
+          demo: 'kazbank',
+          delay: 5000, // 5 second delay
+        });
 
-    injector.registerBug({
-      type: 'corruption',
-      elementId: 'download-statement',
-      message: 'PDF generation failed: File corruption detected in statement export',
-      severity: 'medium',
-      demo: 'kazbank',
-      delay: 2000,
-    });
+        injector.registerBug({
+          type: 'corruption',
+          elementId: 'download-statement',
+          message: 'PDF generation failed: File corruption detected in statement export',
+          severity: 'medium',
+          demo: 'kazbank',
+          delay: 2000,
+        });
 
-    injector.registerBug({
-      type: 'calculation-error',
-      elementId: 'convert-currency',
-      message: 'Exchange rate calculation error: Invalid result for amount 1234.56',
-      severity: 'critical',
-      demo: 'kazbank',
-    });
+        injector.registerBug({
+          type: 'calculation-error',
+          elementId: 'convert-currency',
+          message: 'Exchange rate calculation error: Invalid result for amount 1234.56',
+          severity: 'critical',
+          demo: 'kazbank',
+        });
 
-    injector.registerBug({
-      type: 'validation-error',
-      elementId: 'login-submit',
-      message: '2FA validation failed: OTP verification service unavailable',
-      severity: 'high',
-      demo: 'kazbank',
-    });
+        injector.registerBug({
+          type: 'validation-error',
+          elementId: 'login-submit',
+          message: '2FA validation failed: OTP verification service unavailable',
+          severity: 'high',
+          demo: 'kazbank',
+        });
 
-    injector.registerBug({
-      type: 'layout-break',
-      elementId: 'mobile-menu-toggle',
-      message: 'Navigation render error: Mobile menu overflow causing layout collapse',
-      severity: 'medium',
-      demo: 'kazbank',
-    });
+        injector.registerBug({
+          type: 'layout-break',
+          elementId: 'mobile-menu-toggle',
+          message: 'Navigation render error: Mobile menu overflow causing layout collapse',
+          severity: 'medium',
+          demo: 'kazbank',
+        });
 
-    injector.initialize();
+        injector.initialize();
+      } catch (error) {
+        console.error('[BugInjector] Failed to load config:', error);
+      }
+    };
+    
+    initializeInjector();
   }, []);
 
   return (
