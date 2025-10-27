@@ -84,6 +84,15 @@ export default function AdminPage() {
 
   const isAuthenticated = !!sessionToken;
 
+  // Helper function to generate proper demo URLs
+  const getDemoUrl = (demo: string, sessionId: string, path: string = '') => {
+    const fullSubdomain = `${demo}-${sessionId}`;
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `/${fullSubdomain}${path}`;
+    }
+    return `https://${fullSubdomain}.demo.bugspotter.io${path}`;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -912,33 +921,41 @@ export default function AdminPage() {
                               <div className="space-y-1">
                                 <div className="font-semibold text-gray-700">{session.subdomain}</div>
                                 <div className="flex gap-2 text-xs">
-                                  <Link
-                                    href={`/kazbank-${session.subdomain}`}
+                                  <a
+                                    href={getDemoUrl('kazbank', session.subdomain)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-blue-600 hover:underline"
                                   >
                                     KazBank
-                                  </Link>
+                                  </a>
                                   <span className="text-gray-400">•</span>
-                                  <Link
-                                    href={`/talentflow-${session.subdomain}`}
+                                  <a
+                                    href={getDemoUrl('talentflow', session.subdomain)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-purple-600 hover:underline"
                                   >
                                     TalentFlow
-                                  </Link>
+                                  </a>
                                   <span className="text-gray-400">•</span>
-                                  <Link
-                                    href={`/quickmart-${session.subdomain}`}
+                                  <a
+                                    href={getDemoUrl('quickmart', session.subdomain)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-orange-600 hover:underline"
                                   >
                                     QuickMart
-                                  </Link>
+                                  </a>
                                   <span className="text-gray-400">•</span>
-                                  <Link
-                                    href={`/kazbank-${session.subdomain}/dashboard`}
+                                  <a
+                                    href={getDemoUrl('kazbank', session.subdomain, '/dashboard')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="text-gray-600 hover:underline"
                                   >
                                     Dashboard
-                                  </Link>
+                                  </a>
                                 </div>
                               </div>
                             </td>
