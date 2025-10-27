@@ -1,0 +1,667 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+
+interface DemoSession {
+  subdomain: string;
+  company: string;
+  createdAt: number;
+  expiresAt: number;
+  events: number;
+  bugs: number;
+}
+
+interface BugEvent {
+  id: string;
+  subdomain: string;
+  timestamp: number;
+  errorMessage: string;
+  stackTrace?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  elementId?: string;
+  demo: 'kazbank' | 'talentflow' | 'quickmart';
+  userAgent?: string;
+}
+
+interface BugStats {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  byDemo: {
+    kazbank: number;
+    talentflow: number;
+    quickmart: number;
+  };
+}
+
+export default function AdminPage() {
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [totpToken, setTotpToken] = useState('');
+  const [requiresTOTP, setRequiresTOTP] = useState(false);
+  const [sessions, setSessions] = useState<DemoSession[]>([]);
+  const [bugs, setBugs] = useState<BugEvent[]>([]);
+  const [bugStats, setBugStats] = useState<BugStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'sessions' | 'bugs' | '2fa'>('sessions');
+  const [error, setError] = useState('');
+
+  // 2FA Setup
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [qrCode, setQrCode] = useState('');
+  const [secret, setSecret] = useState('');
+  const [verifyToken, setVerifyToken] = useState('');
+
+  const isAuthenticated = !!sessionToken;
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, totpToken }),
+      });
+
+      const data = await response.json();
+
+      if (data.requiresTOTP) {
+        setRequiresTOTP(true);
+        return;
+      }
+
+      if (data.success) {
+        setSessionToken(data.sessionToken);
+        localStorage.setItem('admin-session', data.sessionToken);
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch {
+      setError('An error occurred during login');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/login', {
+        method: 'DELETE',
+        headers: { 'x-session-token': sessionToken || '' },
+      });
+    } catch (err: unknown) {
+      console.error('Logout error:', err);
+    }
+
+    setSessionToken(null);
+    localStorage.removeItem('admin-session');
+    setEmail('');
+    setPassword('');
+    setTotpToken('');
+    setRequiresTOTP(false);
+  };
+
+  const setup2FA = async () => {
+    try {
+      const response = await fetch('/api/auth/2fa', {
+        method: 'POST',
+        headers: { 'x-session-token': sessionToken || '' },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setQrCode(data.qrCode);
+        setSecret(data.secret);
+        setShow2FASetup(true);
+      }
+    } catch {
+      setError('Failed to setup 2FA');
+    }
+  };
+
+  const enable2FA = async () => {
+    try {
+      const response = await fetch('/api/auth/2fa', {
+        method: 'PUT',
+        headers: {
+          'x-session-token': sessionToken || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: verifyToken }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('2FA enabled successfully!');
+        setShow2FASetup(false);
+        setVerifyToken('');
+      } else {
+        setError(data.error || 'Failed to enable 2FA');
+      }
+    } catch {
+      setError('Failed to enable 2FA');
+    }
+  };
+
+  const disable2FA = async () => {
+    if (!confirm('Are you sure you want to disable 2FA?')) return;
+
+    try {
+      const response = await fetch('/api/auth/2fa', {
+        method: 'DELETE',
+        headers: { 'x-session-token': sessionToken || '' },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('2FA disabled successfully');
+      }
+    } catch {
+      setError('Failed to disable 2FA');
+    }
+  };
+
+  const fetchSessions = useCallback(async () => {
+    if (!sessionToken) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/sessions', {
+        headers: { 'x-session-token': sessionToken },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSessions(data.sessions);
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  const fetchBugs = useCallback(async () => {
+    if (!sessionToken) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/bugs', {
+        headers: { 'x-session-token': sessionToken },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setBugs(data.bugs);
+        setBugStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching bugs:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  const deleteSession = async (subdomain: string) => {
+    if (!confirm(`Delete session ${subdomain}?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/sessions?subdomain=${subdomain}`, {
+        method: 'DELETE',
+        headers: { 'x-session-token': sessionToken || '' },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await fetchSessions();
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+    }
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('admin-session');
+    if (saved) {
+      setSessionToken(saved);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (activeTab === 'sessions') {
+        fetchSessions();
+      } else if (activeTab === 'bugs') {
+        fetchBugs();
+      }
+    }
+  }, [isAuthenticated, activeTab, fetchSessions, fetchBugs]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🔐</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">Admin Login</h1>
+            <p className="text-gray-600 mt-2">BugSpotter Demo System</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="admin@example.com"
+                required
+                disabled={requiresTOTP}
+              />
+            </div>
+
+            {!requiresTOTP && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            )}
+
+            {requiresTOTP && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">2FA Token</label>
+                <input
+                  type="text"
+                  value={totpToken}
+                  onChange={(e) => setTotpToken(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+            )}
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2 rounded-lg transition-colors"
+            >
+              {requiresTOTP ? 'Verify 2FA' : 'Login'}
+            </button>
+
+            {requiresTOTP && (
+              <button
+                type="button"
+                onClick={() => setRequiresTOTP(false)}
+                className="w-full text-gray-600 hover:text-gray-800 text-sm"
+              >
+                ← Back to login
+              </button>
+            )}
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const getSeverityColor = (severity: string) => {
+    const colors = {
+      low: 'bg-yellow-100 text-yellow-800',
+      medium: 'bg-orange-100 text-orange-800',
+      high: 'bg-red-100 text-red-800',
+      critical: 'bg-red-200 text-red-900',
+    };
+    return colors[severity as keyof typeof colors] || colors.medium;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">BugSpotter Admin</h1>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">{email}</span>
+              <Link
+                href="/"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Home
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-md mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="flex gap-8 px-6">
+              <button
+                onClick={() => setActiveTab('sessions')}
+                className={`py-4 border-b-2 font-medium transition-colors ${
+                  activeTab === 'sessions'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Sessions ({sessions.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('bugs')}
+                className={`py-4 border-b-2 font-medium transition-colors ${
+                  activeTab === 'bugs'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                All Bugs ({bugs.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('2fa')}
+                className={`py-4 border-b-2 font-medium transition-colors ${
+                  activeTab === '2fa'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Security (2FA)
+              </button>
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === '2fa' ? (
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Two-Factor Authentication</h2>
+
+                {!show2FASetup ? (
+                  <div className="space-y-4">
+                    <p className="text-gray-600">
+                      Add an extra layer of security to your account by enabling two-factor
+                      authentication.
+                    </p>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={setup2FA}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                      >
+                        Setup 2FA
+                      </button>
+                      <button
+                        onClick={disable2FA}
+                        className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                      >
+                        Disable 2FA
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <h3 className="font-bold text-blue-900 mb-4">Step 1: Scan QR Code</h3>
+                      <p className="text-blue-800 mb-4">
+                        Scan this QR code with your authenticator app (Google Authenticator, Authy,
+                        etc.)
+                      </p>
+                      {qrCode && (
+                        <div className="bg-white p-4 rounded-lg inline-block">
+                          <Image src={qrCode} alt="2FA QR Code" width={200} height={200} />
+                        </div>
+                      )}
+                      <p className="text-sm text-blue-700 mt-4">
+                        Or enter this code manually:{' '}
+                        <code className="bg-white px-2 py-1 rounded">{secret}</code>
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <h3 className="font-bold text-gray-900 mb-4">Step 2: Verify Setup</h3>
+                      <p className="text-gray-700 mb-4">
+                        Enter the 6-digit code from your authenticator app to complete setup
+                      </p>
+                      <div className="flex gap-4">
+                        <input
+                          type="text"
+                          value={verifyToken}
+                          onChange={(e) => setVerifyToken(e.target.value)}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-center text-2xl tracking-widest"
+                          placeholder="000000"
+                          maxLength={6}
+                        />
+                        <button
+                          onClick={enable2FA}
+                          className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                          Verify & Enable
+                        </button>
+                      </div>
+                      {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShow2FASetup(false);
+                        setVerifyToken('');
+                        setError('');
+                      }}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      ← Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : loading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-gray-600 mt-4">Loading...</p>
+              </div>
+            ) : activeTab === 'sessions' ? (
+              <div>
+                <div className="mb-4 flex justify-between items-center">
+                  <h2 className="text-lg font-bold text-gray-800">Active Sessions</h2>
+                  <button
+                    onClick={fetchSessions}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {sessions.length === 0 ? (
+                  <p className="text-gray-600 text-center py-8">No active sessions</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Subdomain
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Company
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Bugs
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Events
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Created
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Expires
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {sessions.map((session) => (
+                          <tr key={session.subdomain} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              <Link
+                                href={`/${session.subdomain}/dashboard`}
+                                className="text-blue-600 hover:underline"
+                              >
+                                {session.subdomain}
+                              </Link>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{session.company}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="inline-block px-2 py-1 bg-red-100 text-red-800 rounded font-medium">
+                                {session.bugs}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{session.events}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {formatTime(session.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {formatTime(session.expiresAt)}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <button
+                                onClick={() => deleteSession(session.subdomain)}
+                                className="text-red-600 hover:text-red-700 font-medium"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="mb-6 flex justify-between items-center">
+                  <h2 className="text-lg font-bold text-gray-800">All Bugs</h2>
+                  <button
+                    onClick={fetchBugs}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {bugStats && (
+                  <div className="grid md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-gray-100 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Total Bugs</p>
+                      <p className="text-2xl font-bold text-gray-800">{bugStats.total}</p>
+                    </div>
+                    <div className="bg-red-100 rounded-lg p-4">
+                      <p className="text-sm text-red-700">Critical</p>
+                      <p className="text-2xl font-bold text-red-800">{bugStats.critical}</p>
+                    </div>
+                    <div className="bg-orange-100 rounded-lg p-4">
+                      <p className="text-sm text-orange-700">High</p>
+                      <p className="text-2xl font-bold text-orange-800">{bugStats.high}</p>
+                    </div>
+                    <div className="bg-yellow-100 rounded-lg p-4">
+                      <p className="text-sm text-yellow-700">Medium/Low</p>
+                      <p className="text-2xl font-bold text-yellow-800">
+                        {bugStats.medium + bugStats.low}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {bugs.length === 0 ? (
+                  <p className="text-gray-600 text-center py-8">No bugs captured yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {bugs.map((bug) => (
+                      <div
+                        key={bug.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold ${getSeverityColor(
+                                  bug.severity
+                                )}`}
+                              >
+                                {bug.severity.toUpperCase()}
+                              </span>
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
+                                {bug.demo.toUpperCase()}
+                              </span>
+                              <Link
+                                href={`/${bug.subdomain}/dashboard`}
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                {bug.subdomain}
+                              </Link>
+                            </div>
+                            <p className="font-medium text-gray-800 mb-1">{bug.errorMessage}</p>
+                            {bug.elementId && (
+                              <p className="text-sm text-gray-600">Element: #{bug.elementId}</p>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">{formatTime(bug.timestamp)}</span>
+                        </div>
+                        {bug.stackTrace && (
+                          <details className="mt-2">
+                            <summary className="text-sm text-gray-600 cursor-pointer hover:text-gray-800">
+                              View Stack Trace
+                            </summary>
+                            <pre className="mt-2 text-xs bg-gray-900 text-green-400 p-3 rounded overflow-x-auto">
+                              {bug.stackTrace}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
