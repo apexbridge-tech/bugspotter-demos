@@ -76,36 +76,44 @@ export default function KazBankDemo() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-blue-900 text-white shadow-lg">
+      <header className="bg-white shadow-md border-b-4 border-red-600">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">
-                K
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-red-600 rounded flex items-center justify-center font-bold text-2xl text-white">
+                  БЦК
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">KazBank</h1>
+                  <p className="text-xs text-gray-500">Your Trusted Banking Partner</p>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold">KazBank</h1>
             </div>
             <button
               id="mobile-menu-toggle"
-              className="lg:hidden px-4 py-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition-colors"
+              className="lg:hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               Menu
             </button>
             <nav className="hidden lg:flex gap-6">
-              <a href="#" className="hover:text-blue-300 transition-colors">
-                Accounts
+              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+                Счета
               </a>
-              <a href="#" className="hover:text-blue-300 transition-colors">
-                Transfers
+              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+                Переводы
               </a>
-              <a href="#" className="hover:text-blue-300 transition-colors">
-                Cards
+              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+                Карты
               </a>
-              <a href="#" className="hover:text-blue-300 transition-colors">
-                Loans
+              <a href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium">
+                Кредиты
               </a>
+              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                Выход
+              </button>
             </nav>
           </div>
         </div>
@@ -116,49 +124,62 @@ export default function KazBankDemo() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Account Overview */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Account Overview</h2>
+            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-red-600">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Мои счета</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg p-6 text-white">
-                  <p className="text-blue-100 text-sm mb-2">Checking Account</p>
-                  <p className="text-3xl font-bold">$24,589.32</p>
-                  <p className="text-blue-200 text-sm mt-2">****1234</p>
+                <div className="bg-gradient-to-br from-red-500 to-red-700 rounded-lg p-6 text-white shadow-lg">
+                  <p className="text-red-100 text-sm mb-2">Текущий счет</p>
+                  <p className="text-3xl font-bold">₸ 4,589,320</p>
+                  <p className="text-red-200 text-sm mt-2">KZ12 3456 7890 1234</p>
+                  <div className="mt-4 flex gap-2">
+                    <div className="text-xs bg-red-800 bg-opacity-50 px-2 py-1 rounded">VISA</div>
+                    <div className="text-xs bg-red-800 bg-opacity-50 px-2 py-1 rounded">Активна</div>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg p-6 text-white">
-                  <p className="text-gray-300 text-sm mb-2">Savings Account</p>
-                  <p className="text-3xl font-bold">$45,230.18</p>
-                  <p className="text-gray-300 text-sm mt-2">****5678</p>
+                <div className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg p-6 text-white shadow-lg">
+                  <p className="text-gray-300 text-sm mb-2">Сберегательный счет</p>
+                  <p className="text-3xl font-bold">₸ 8,230,180</p>
+                  <p className="text-gray-300 text-sm mt-2">KZ98 7654 3210 5678</p>
+                  <div className="mt-4 flex gap-2">
+                    <div className="text-xs bg-gray-800 bg-opacity-50 px-2 py-1 rounded">7.5% годовых</div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Quick Transfer */}
             <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Transfer</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-red-600">💸</span>
+                Быстрый перевод
+              </h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Recipient Account
+                    Счет получателя
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter account number"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    placeholder="KZ__ ____ ____ ____"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Сумма</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₸</span>
+                  </div>
                 </div>
                 <button
                   id="transfer-btn"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  Transfer Funds
+                  Перевести
                 </button>
               </div>
             </div>
@@ -166,20 +187,21 @@ export default function KazBankDemo() {
             {/* Recent Transactions */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Recent Transactions</h2>
+                <h2 className="text-xl font-bold text-gray-800">Последние операции</h2>
                 <button
                   id="download-statement"
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                  className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-1"
                 >
-                  Download Statement
+                  <span>📄</span>
+                  Выписка
                 </button>
               </div>
               <div className="space-y-3">
                 {[
-                  { name: 'Amazon.com', amount: '-$89.99', date: 'Oct 25' },
-                  { name: 'Salary Deposit', amount: '+$5,200.00', date: 'Oct 24' },
-                  { name: 'Netflix', amount: '-$15.99', date: 'Oct 23' },
-                  { name: 'Starbucks', amount: '-$6.45', date: 'Oct 22' },
+                  { name: 'Kaspi.kz', amount: '-₸ 28,900', date: '25 окт' },
+                  { name: 'Зарплата', amount: '+₸ 520,000', date: '24 окт' },
+                  { name: 'Magnum', amount: '-₸ 12,340', date: '23 окт' },
+                  { name: 'Алматы Энерго', amount: '-₸ 8,500', date: '22 окт' },
                 ].map((tx, i) => (
                   <div
                     key={i}
@@ -203,57 +225,63 @@ export default function KazBankDemo() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Currency Converter */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-bold text-gray-800 mb-4">Currency Converter</h3>
+            <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-red-600">
+              <h3 className="font-bold text-gray-800 mb-4">Конвертер валют</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">From</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>GBP</option>
+                  <label className="block text-xs text-gray-600 mb-1 font-medium">Из</label>
+                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all">
+                    <option>USD - Доллар США</option>
+                    <option>EUR - Евро</option>
+                    <option>KZT - Тенге</option>
+                    <option>RUB - Рубль</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">To</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>EUR</option>
-                    <option>USD</option>
-                    <option>GBP</option>
+                  <label className="block text-xs text-gray-600 mb-1 font-medium">В</label>
+                  <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all">
+                    <option>KZT - Тенге</option>
+                    <option>EUR - Евро</option>
+                    <option>USD - Доллар США</option>
+                    <option>RUB - Рубль</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                  <label className="block text-xs text-gray-600 mb-1 font-medium">Сумма</label>
                   <input
                     type="number"
-                    placeholder="1234.56"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="1000"
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
                   />
                 </div>
                 <button
                   id="convert-currency"
-                  className="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow-md"
                 >
-                  Convert
+                  Конвертировать
                 </button>
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-gray-600">Курс обмена</div>
+                  <div className="text-lg font-bold text-gray-800">1 USD = 475.50 ₸</div>
+                </div>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-bold text-gray-800 mb-4">Quick Actions</h3>
+              <h3 className="font-bold text-gray-800 mb-4">Быстрые действия</h3>
               <div className="space-y-2">
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <div className="font-medium text-gray-800">Pay Bills</div>
-                  <div className="text-xs text-gray-500">Manage your payments</div>
+                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                  <div className="font-medium text-gray-800">💳 Оплата услуг</div>
+                  <div className="text-xs text-gray-500">Коммунальные, интернет, ТВ</div>
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <div className="font-medium text-gray-800">Card Settings</div>
-                  <div className="text-xs text-gray-500">Manage your cards</div>
+                <button id="login-submit" className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                  <div className="font-medium text-gray-800">🔐 Настройки карт</div>
+                  <div className="text-xs text-gray-500">Управление картами</div>
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <div className="font-medium text-gray-800">Support</div>
-                  <div className="text-xs text-gray-500">Get help</div>
+                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors border-2 border-gray-100 hover:border-red-200">
+                  <div className="font-medium text-gray-800">📞 Поддержка 24/7</div>
+                  <div className="text-xs text-gray-500">Онлайн консультация</div>
                 </button>
               </div>
             </div>
