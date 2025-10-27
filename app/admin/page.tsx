@@ -1219,14 +1219,43 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Element ID (optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={newBug.elementId}
                   onChange={(e) => setNewBug({ ...newBug, elementId: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., checkout-btn"
-                />
-                <p className="text-xs text-gray-500 mt-1">The HTML element ID that triggered the bug</p>
+                >
+                  <option value="">-- Select an element (optional) --</option>
+                  {newBug.demo === 'kazbank' && (
+                    <>
+                      <option value="transfer-btn">transfer-btn - Money Transfer Button</option>
+                      <option value="download-statement">download-statement - Statement Download</option>
+                      <option value="convert-currency">convert-currency - Currency Converter</option>
+                      <option value="login-submit">login-submit - 2FA Login Submit</option>
+                      <option value="mobile-menu-toggle">mobile-menu-toggle - Mobile Menu</option>
+                    </>
+                  )}
+                  {newBug.demo === 'talentflow' && (
+                    <>
+                      <option value="search-candidates">search-candidates - Candidate Search</option>
+                      <option value="upload-resume">upload-resume - Resume Upload</option>
+                      <option value="schedule-interview">schedule-interview - Interview Scheduling</option>
+                      <option value="send-bulk-email">send-bulk-email - Bulk Email Sender</option>
+                      <option value="export-excel">export-excel - Excel Export</option>
+                    </>
+                  )}
+                  {newBug.demo === 'quickmart' && (
+                    <>
+                      <option value="add-to-cart-1">add-to-cart-1 - Add to Cart Button</option>
+                      <option value="checkout-btn">checkout-btn - Checkout Button</option>
+                      <option value="search-products">search-products - Product Search</option>
+                      <option value="product-image-1">product-image-1 - Product Image</option>
+                      <option value="apply-promo">apply-promo - Apply Promo Code</option>
+                    </>
+                  )}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select from actual interactive elements in the {newBug.demo.charAt(0).toUpperCase() + newBug.demo.slice(1)} demo
+                </p>
               </div>
 
               <div>
