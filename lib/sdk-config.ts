@@ -47,7 +47,6 @@ export async function initializeBugSpotter(
       showWidget: true, // Show floating bug report button
       widgetOptions: {
         position: 'bottom-right',
-        label: 'Report Bug',
       },
       replay: {
         enabled: true,
