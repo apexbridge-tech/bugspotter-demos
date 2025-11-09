@@ -14,7 +14,7 @@ async function checkAdmin() {
   try {
     console.log('Checking admin user:', email);
     const userData = await redis.get(`admin:${email}`);
-    
+
     if (!userData) {
       console.log('❌ Admin user not found');
       return;
@@ -22,7 +22,7 @@ async function checkAdmin() {
 
     console.log('✓ Admin user found:');
     console.log(JSON.stringify(userData, null, 2));
-    
+
     // Check the structure
     const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
     console.log('\nParsed user object:');

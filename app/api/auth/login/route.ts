@@ -6,9 +6,11 @@ import { Redis } from '@upstash/redis';
 // Lazy initialization of Redis client to ensure env vars are loaded
 function getRedis() {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    throw new Error('Redis credentials not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.');
+    throw new Error(
+      'Redis credentials not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.'
+    );
   }
-  
+
   return new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
     const redis = getRedis();
     const userData = await redis.get(`admin:${email}`);
     console.log('[Login API] User found:', !!userData);
-    
+
     if (!userData) {
       console.log('[Login API] User not found in Redis');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
     console.log('[Login API] Verifying password...');
     const isValid = await bcrypt.compare(password, user.passwordHash);
     console.log('[Login API] Password valid:', isValid);
-    
+
     if (!isValid) {
       console.log('[Login API] Invalid password');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -106,13 +108,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[Login API] ERROR:', error);
     console.error('[Login API] Error type:', error instanceof Error ? 'Error' : typeof error);
-    console.error('[Login API] Error message:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[Login API] Error message:',
+      error instanceof Error ? error.message : String(error)
+    );
     console.error('[Login API] Error stack:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
-      { 
+      {
         error: 'Login failed',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined 
-      }, 
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+      },
       { status: 500 }
     );
   }

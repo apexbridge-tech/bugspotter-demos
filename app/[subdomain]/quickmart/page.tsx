@@ -1,28 +1,67 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { BugInjector } from '@/lib/bug-injector';
+import { initializeBugSpotter, fetchDemoApiKey } from '@/lib/sdk-config';
+import { BugSpotterSDK } from '@/types/bug';
 
 export const dynamic = 'force-dynamic';
 
 export default function QuickMartDemo() {
   const [cartCount, setCartCount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
+  const params = useParams();
+  const subdomain = params.subdomain as string;
+  const sessionId = subdomain?.match(/^(?:kazbank|talentflow|quickmart)-(.+)$/)?.[1] || subdomain;
 
   useEffect(() => {
+    // Initialize BugSpotter SDK with session API key
+    const initializeSDK = async () => {
+      if (!sessionId) {
+        console.warn('⚠️ No session ID found, skipping BugSpotter SDK initialization');
+        return null;
+      }
+
+      // Fetch API key for this demo from the session
+      const apiKey = await fetchDemoApiKey(sessionId, 'quickmart');
+
+      if (!apiKey) {
+        console.warn('⚠️ No API key found for QuickMart demo, continuing without SDK');
+        return null;
+      }
+
+      const bugspotterSDK = await initializeBugSpotter(apiKey, sessionId);
+
+      if (bugspotterSDK) {
+        console.info('✅ BugSpotter SDK ready for QuickMart demo');
+      } else {
+        console.warn('⚠️ BugSpotter SDK initialization failed, continuing with demo only');
+      }
+
+      return bugspotterSDK;
+    };
+
+    let sdkInstance: BugSpotterSDK | null = null;
+
     const initializeInjector = async () => {
+      // Wait for SDK to initialize first
+      const sdk = await initializeSDK();
+      sdkInstance = sdk;
+
       try {
         const response = await fetch('/api/injector/config');
         const data = await response.json();
-        
-        const config = data.success && data.config ? data.config : { enabled: true, probability: 30 };
-        
+
+        const config =
+          data.success && data.config ? data.config : { enabled: true, probability: 30 };
+
         if (!config.enabled) {
           console.log('[BugInjector] Disabled by admin');
           return;
         }
-        
-        const injector = new BugInjector(config.probability / 100);
+
+        const injector = new BugInjector(config.probability / 100, sdk);
 
         // Register bugs
         injector.registerBug({
@@ -71,9 +110,16 @@ export default function QuickMartDemo() {
         console.error('[BugInjector] Failed to load config:', error);
       }
     };
-    
+
     initializeInjector();
-  }, []);
+
+    // Cleanup function
+    return () => {
+      if (sdkInstance) {
+        sdkInstance.destroy();
+      }
+    };
+  }, [sessionId]);
 
   const handleAddToCart = () => {
     setCartCount((prev) => prev + 2); // Intentionally adds 2 (bug simulation)

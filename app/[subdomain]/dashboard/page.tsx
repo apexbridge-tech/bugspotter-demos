@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { RegisteredBug } from '../../../types/bug';
 
 export const dynamic = 'force-dynamic';
 import { useParams } from 'next/navigation';
@@ -21,15 +22,17 @@ interface Bug {
 export default function DashboardPage() {
   const params = useParams();
   const subdomain = params.subdomain as string;
-  
+
   // Extract session ID from subdomain (format: {demo}-{session} or just {session})
   const sessionId = subdomain.match(/^(?:kazbank|talentflow|quickmart)-(.+)$/)?.[1] || subdomain;
-  
+
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
-  const [registeredBugs, setRegisteredBugs] = useState<any[]>([]);
-  const [sessionInfo, setSessionInfo] = useState<{ company?: string; createdAt?: number } | null>(null);
+  const [registeredBugs, setRegisteredBugs] = useState<RegisteredBug[]>([]);
+  const [sessionInfo, setSessionInfo] = useState<{ company?: string; createdAt?: number } | null>(
+    null
+  );
 
   const fetchBugs = useCallback(async () => {
     try {
@@ -70,9 +73,7 @@ export default function DashboardPage() {
   }, []);
 
   const getBugInfo = (bug: Bug) => {
-    return registeredBugs.find(
-      (rb) => rb.demo === bug.demo && rb.elementId === bug.elementId
-    );
+    return registeredBugs.find((rb) => rb.demo === bug.demo && rb.elementId === bug.elementId);
   };
 
   useEffect(() => {
@@ -169,6 +170,14 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">Total Bugs Captured</p>
                 <p className="text-2xl font-bold text-red-600">{bugs.length}</p>
               </div>
+              <a
+                href="https://demo.admin.bugspotter.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                BugSpotter Admin →
+              </a>
               <Link
                 href="/"
                 className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors"
@@ -211,8 +220,8 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <h2 className="text-lg font-bold text-gray-800 mb-4">Demo Sites</h2>
           <div className="grid md:grid-cols-3 gap-4">
-            <a
-              href={getDemoUrl('kazbank')}
+            <Link
+              href={`/${subdomain}/kazbank`}
               className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -224,9 +233,9 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 Banking demo with transfer, statement, and currency bugs
               </p>
-            </a>
-            <a
-              href={getDemoUrl('talentflow')}
+            </Link>
+            <Link
+              href={`/${subdomain}/talentflow`}
               className="p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -238,9 +247,9 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 HR demo with search, upload, and scheduling bugs
               </p>
-            </a>
-            <a
-              href={getDemoUrl('quickmart')}
+            </Link>
+            <Link
+              href={`/${subdomain}/quickmart`}
               className="p-4 border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -252,7 +261,7 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 E-commerce demo with cart, checkout, and promo bugs
               </p>
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -354,7 +363,9 @@ export default function DashboardPage() {
                           <strong>How to reproduce:</strong> {bugInfo.triggerAction}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-blue-700">
-                          <span className="px-2 py-1 bg-blue-200 rounded">Type: {bugInfo.type}</span>
+                          <span className="px-2 py-1 bg-blue-200 rounded">
+                            Type: {bugInfo.type}
+                          </span>
                           {bugInfo.delay && (
                             <span className="px-2 py-1 bg-blue-200 rounded">
                               Delay: {bugInfo.delay / 1000}s
@@ -369,7 +380,9 @@ export default function DashboardPage() {
 
               {/* Error Message */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Error Message</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Error Message
+                </label>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 font-mono text-sm">{selectedBug.errorMessage}</p>
                 </div>
@@ -412,7 +425,8 @@ export default function DashboardPage() {
                     Stack Trace
                   </label>
                   <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-{selectedBug.stackTrace}</pre>
+                    {selectedBug.stackTrace}
+                  </pre>
                 </div>
               )}
 

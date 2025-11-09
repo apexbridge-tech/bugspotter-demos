@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 import { BugInjector } from '@/lib/bug-injector';
+import { initializeBugSpotter, fetchDemoApiKey } from '@/lib/sdk-config';
+import { BugSpotterSDK } from '@/types/bug';
 
 type Language = 'en' | 'kk' | 'ru';
 
@@ -134,22 +137,59 @@ export default function KazBankDemo() {
   const [language, setLanguage] = useState<Language>('en');
   const t = translations[language];
 
+  const params = useParams();
+  const subdomain = params.subdomain as string;
+  const sessionId = subdomain?.match(/^(?:kazbank|talentflow|quickmart)-(.+)$/)?.[1] || subdomain;
+
   useEffect(() => {
+    // Initialize BugSpotter SDK with session API key
+    const initializeSDK = async () => {
+      if (!sessionId) {
+        console.warn('⚠️ No session ID found, skipping BugSpotter SDK initialization');
+        return null;
+      }
+
+      // Fetch API key for this demo from the session
+      const apiKey = await fetchDemoApiKey(sessionId, 'kazbank');
+
+      if (!apiKey) {
+        console.warn('⚠️ No API key found for KazBank demo, continuing without SDK');
+        return null;
+      }
+
+      const bugspotterSDK = await initializeBugSpotter(apiKey, sessionId);
+
+      if (bugspotterSDK) {
+        console.info('✅ BugSpotter SDK ready for KazBank demo');
+      } else {
+        console.warn('⚠️ BugSpotter SDK initialization failed, continuing with demo only');
+      }
+
+      return bugspotterSDK;
+    };
+
+    let sdkInstance: BugSpotterSDK | null = null;
+
     // Fetch injector configuration and initialize
     const initializeInjector = async () => {
+      // Wait for SDK to initialize first
+      const sdk = await initializeSDK();
+      sdkInstance = sdk;
+
       try {
         const response = await fetch('/api/injector/config');
         const data = await response.json();
-        
-        const config = data.success && data.config ? data.config : { enabled: true, probability: 30 };
-        
+
+        const config =
+          data.success && data.config ? data.config : { enabled: true, probability: 30 };
+
         // Don't initialize if disabled
         if (!config.enabled) {
           console.log('[BugInjector] Disabled by admin');
           return;
         }
-        
-        const injector = new BugInjector(config.probability / 100);
+
+        const injector = new BugInjector(config.probability / 100, sdk);
 
         // Register bugs
         injector.registerBug({
@@ -199,9 +239,16 @@ export default function KazBankDemo() {
         console.error('[BugInjector] Failed to load config:', error);
       }
     };
-    
+
     initializeInjector();
-  }, []);
+
+    // Cleanup function
+    return () => {
+      if (sdkInstance) {
+        sdkInstance.destroy();
+      }
+    };
+  }, [sessionId]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -261,16 +308,28 @@ export default function KazBankDemo() {
               </button>
             </div>
             <nav className="hidden lg:flex gap-6 items-center">
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+              <a
+                href="#"
+                className="text-gray-700 hover:text-green-600 transition-colors font-medium"
+              >
                 {t.accounts}
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+              <a
+                href="#"
+                className="text-gray-700 hover:text-green-600 transition-colors font-medium"
+              >
                 {t.transfers}
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+              <a
+                href="#"
+                className="text-gray-700 hover:text-green-600 transition-colors font-medium"
+              >
                 {t.cards}
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+              <a
+                href="#"
+                className="text-gray-700 hover:text-green-600 transition-colors font-medium"
+              >
                 {t.loans}
               </a>
               <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
@@ -295,7 +354,9 @@ export default function KazBankDemo() {
                   <p className="text-green-200 text-sm mt-2">KZ12 3456 7890 1234</p>
                   <div className="mt-4 flex gap-2">
                     <div className="text-xs bg-green-800 bg-opacity-50 px-2 py-1 rounded">VISA</div>
-                    <div className="text-xs bg-green-800 bg-opacity-50 px-2 py-1 rounded">{t.active}</div>
+                    <div className="text-xs bg-green-800 bg-opacity-50 px-2 py-1 rounded">
+                      {t.active}
+                    </div>
                   </div>
                 </div>
                 <div className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg p-6 text-white shadow-lg">
@@ -303,7 +364,9 @@ export default function KazBankDemo() {
                   <p className="text-3xl font-bold">₸ 8,230,180</p>
                   <p className="text-gray-300 text-sm mt-2">KZ98 7654 3210 5678</p>
                   <div className="mt-4 flex gap-2">
-                    <div className="text-xs bg-gray-800 bg-opacity-50 px-2 py-1 rounded">7.5% {t.perAnnum}</div>
+                    <div className="text-xs bg-gray-800 bg-opacity-50 px-2 py-1 rounded">
+                      7.5% {t.perAnnum}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -334,7 +397,9 @@ export default function KazBankDemo() {
                       placeholder="0.00"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₸</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                      ₸
+                    </span>
                   </div>
                 </div>
                 <button
@@ -360,25 +425,30 @@ export default function KazBankDemo() {
               </div>
               <div className="space-y-3">
                 {[
-                  { 
-                    name: 'Kaspi.kz', 
-                    amount: '-₸ 28,900', 
-                    date: language === 'en' ? 'Oct 25' : language === 'ru' ? '25 окт' : '25 қаз' 
+                  {
+                    name: 'Kaspi.kz',
+                    amount: '-₸ 28,900',
+                    date: language === 'en' ? 'Oct 25' : language === 'ru' ? '25 окт' : '25 қаз',
                   },
-                  { 
-                    name: t.salary, 
-                    amount: '+₸ 520,000', 
-                    date: language === 'en' ? 'Oct 24' : language === 'ru' ? '24 окт' : '24 қаз' 
+                  {
+                    name: t.salary,
+                    amount: '+₸ 520,000',
+                    date: language === 'en' ? 'Oct 24' : language === 'ru' ? '24 окт' : '24 қаз',
                   },
-                  { 
-                    name: 'Magnum', 
-                    amount: '-₸ 12,340', 
-                    date: language === 'en' ? 'Oct 23' : language === 'ru' ? '23 окт' : '23 қаз' 
+                  {
+                    name: 'Magnum',
+                    amount: '-₸ 12,340',
+                    date: language === 'en' ? 'Oct 23' : language === 'ru' ? '23 окт' : '23 қаз',
                   },
-                  { 
-                    name: language === 'en' ? 'Almaty Energy' : language === 'ru' ? 'Алматы Энерго' : 'Алматы Энерго', 
-                    amount: '-₸ 8,500', 
-                    date: language === 'en' ? 'Oct 22' : language === 'ru' ? '22 окт' : '22 қаз' 
+                  {
+                    name:
+                      language === 'en'
+                        ? 'Almaty Energy'
+                        : language === 'ru'
+                          ? 'Алматы Энерго'
+                          : 'Алматы Энерго',
+                    amount: '-₸ 8,500',
+                    date: language === 'en' ? 'Oct 22' : language === 'ru' ? '22 окт' : '22 қаз',
                   },
                 ].map((tx, i) => (
                   <div
@@ -453,7 +523,10 @@ export default function KazBankDemo() {
                   <div className="font-medium text-gray-800">💳 {t.payBills}</div>
                   <div className="text-xs text-gray-500">{t.utilities}</div>
                 </button>
-                <button id="login-submit" className="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 transition-colors border-2 border-gray-100 hover:border-green-200">
+                <button
+                  id="login-submit"
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 transition-colors border-2 border-gray-100 hover:border-green-200"
+                >
                   <div className="font-medium text-gray-800">🔐 {t.cardSettings}</div>
                   <div className="text-xs text-gray-500">{t.manageCards}</div>
                 </button>
