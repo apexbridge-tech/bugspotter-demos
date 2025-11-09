@@ -38,15 +38,15 @@ export async function initializeBugSpotter(
     console.info('🔑 API Key:', apiKey.substring(0, 10) + '...');
 
     // Initialize SDK with API key and auth configuration
-    const instance = BugSpotter.init({
+    const config = {
       endpoint: `${process.env.NEXT_PUBLIC_BUGSPOTTER_API}/api/v1/reports`,
       auth: {
-        type: 'api-key',
+        type: 'api-key' as const,
         apiKey,
       },
       showWidget: true, // Show floating bug report button
       widgetOptions: {
-        position: 'bottom-right',
+        position: 'bottom-right' as const,
       },
       replay: {
         enabled: true,
@@ -58,9 +58,13 @@ export async function initializeBugSpotter(
       },
       sanitize: {
         enabled: true,
-        patterns: ['email', 'phone'],
+        patterns: ['email', 'phone'] as ('email' | 'phone')[],
       },
-    });
+    };
+
+    console.info('📋 BugSpotter.init() config:', JSON.stringify(config, null, 2));
+
+    const instance = BugSpotter.init(config);
 
     console.info('✅ BugSpotter SDK initialized successfully');
     console.info('🎨 Widget enabled: true');
