@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 export default function Home() {
   const [company, setCompany] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,7 +19,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ company }),
+        body: JSON.stringify({ company, email }),
       });
 
       const data = await response.json();
@@ -87,6 +88,23 @@ export default function Home() {
                   minLength={2}
                   maxLength={50}
                 />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  We'll send your BugSpotter credentials to this email
+                </p>
               </div>
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">

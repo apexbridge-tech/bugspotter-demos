@@ -5,6 +5,8 @@
  * and triggers bugs with 30% probability to simulate real-world issues
  */
 
+import type { BugSpotterSDK } from '@/types/bug';
+
 export type BugType =
   | 'timeout'
   | 'network-error'
@@ -28,10 +30,11 @@ export interface BugConfig {
 export class BugInjector {
   private probability: number = 0.3; // 30% chance
   private bugs: Map<string, BugConfig> = new Map();
-  private apiEndpoint: string = '/api/bugs';
+  private bugspotterSDK: BugSpotterSDK | null = null;
 
-  constructor(probability: number = 0.3) {
+  constructor(probability: number = 0.3, bugspotterSDK?: BugSpotterSDK | null) {
     this.probability = probability;
+    this.bugspotterSDK = bugspotterSDK || null;
   }
 
   /**
@@ -85,13 +88,13 @@ export class BugInjector {
   }
 
   /**
-   * Triggers a bug and sends it to the API
+   * Triggers a bug and shows BugSpotter's built-in report modal
    */
   private async triggerBug(config: BugConfig): Promise<void> {
     const error = this.generateError(config);
 
-    // Log to console (will be captured by BugSpotter SDK)
-    console.error(`[BugInjector] ${config.type}:`, error.message);
+    // Log error to console so it appears in bug report
+    console.error(`[${config.severity.toUpperCase()}] ${config.type}:`, error.message);
     if (error.stack) {
       console.error(error.stack);
     }
@@ -99,8 +102,17 @@ export class BugInjector {
     // Visual feedback
     this.showVisualFeedback(config);
 
-    // Send to API
-    await this.reportBug(config, error);
+    // Use BugSpotter SDK's built-in capture modal
+    if (this.bugspotterSDK) {
+      try {
+        await this.bugspotterSDK.capture();
+        console.log('[BugInjector] Bug report captured via BugSpotter SDK');
+      } catch (err) {
+        console.error('[BugInjector] Failed to open BugSpotter capture modal:', err);
+      }
+    } else {
+      console.warn('[BugInjector] BugSpotter SDK not available');
+    }
   }
 
   /**
@@ -189,77 +201,6 @@ export class BugInjector {
         element.style.transition = originalTransition;
       }, 300);
     }, 1000);
-
-    // Show error message overlay for critical bugs
-    if (config.severity === 'critical' || config.severity === 'high') {
-      this.showErrorOverlay(config.message);
-    }
-  }
-
-  /**
-   * Shows an error overlay message
-   */
-  private showErrorOverlay(message: string): void {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fee2e2;
-      border: 2px solid #ef4444;
-      border-radius: 8px;
-      padding: 16px 20px;
-      max-width: 400px;
-      z-index: 9999;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      font-family: system-ui, -apple-system, sans-serif;
-      animation: slideIn 0.3s ease-out;
-    `;
-
-    overlay.innerHTML = `
-      <div style="display: flex; gap: 12px; align-items: start;">
-        <svg style="width: 24px; height: 24px; color: #dc2626; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <div>
-          <div style="font-weight: 600; color: #991b1b; margin-bottom: 4px;">Error Occurred</div>
-          <div style="color: #7f1d1d; font-size: 14px;">${message}</div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    setTimeout(() => {
-      overlay.style.animation = 'slideOut 0.3s ease-in';
-      setTimeout(() => overlay.remove(), 300);
-    }, 4000);
-  }
-
-  /**
-   * Reports bug to the API
-   */
-  private async reportBug(config: BugConfig, error: Error): Promise<void> {
-    try {
-      const bugData = {
-        errorMessage: config.message,
-        stackTrace: error.stack,
-        severity: config.severity,
-        elementId: config.elementId,
-        demo: config.demo,
-        userAgent: navigator.userAgent,
-      };
-
-      await fetch(this.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bugData),
-      });
-    } catch (err) {
-      console.error('Failed to report bug:', err);
-    }
   }
 
   /**
@@ -271,32 +212,4 @@ export class BugInjector {
       this.triggerBug(config);
     }
   }
-}
-
-// Add CSS animation for overlay
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-    }
-  `;
-  document.head.appendChild(style);
 }

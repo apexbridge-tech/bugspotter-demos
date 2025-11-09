@@ -15,7 +15,7 @@ async function testLogin() {
 
   try {
     console.log('Testing login for:', email);
-    
+
     const userData = await redis.get(`admin:${email}`);
     if (!userData) {
       console.log('❌ User not found');
@@ -25,10 +25,10 @@ async function testLogin() {
     const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
     console.log('✓ User found');
     console.log('  Password hash:', user.passwordHash);
-    
+
     const isValid = await bcrypt.compare(password, user.passwordHash);
     console.log('\n  Password verification:', isValid ? '✓ VALID' : '❌ INVALID');
-    
+
     if (isValid) {
       console.log('\n✅ Login should work!');
     } else {

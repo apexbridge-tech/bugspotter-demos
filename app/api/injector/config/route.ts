@@ -26,7 +26,7 @@ const DEFAULT_CONFIG: InjectorConfig = {
 };
 
 // GET - Retrieve injector configuration
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const redis = getRedis();
     const config = await redis.get('injector:config');
@@ -77,17 +77,11 @@ export async function PUT(request: NextRequest) {
 
     // Validate inputs
     if (typeof enabled !== 'boolean' || typeof probability !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid configuration format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid configuration format' }, { status: 400 });
     }
 
     if (probability < 0 || probability > 100) {
-      return NextResponse.json(
-        { error: 'Probability must be between 0 and 100' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Probability must be between 0 and 100' }, { status: 400 });
     }
 
     const config: InjectorConfig = {
@@ -106,9 +100,6 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating injector config:', error);
-    return NextResponse.json(
-      { error: 'Failed to update configuration' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update configuration' }, { status: 500 });
   }
 }

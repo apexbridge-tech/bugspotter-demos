@@ -1,6 +1,8 @@
 // Script to seed test bugs for demo purposes
-require('dotenv').config({ path: '.env.local' });
-const { Redis } = require('@upstash/redis');
+import dotenv from 'dotenv';
+import { Redis } from '@upstash/redis';
+
+dotenv.config({ path: '.env.local' });
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -11,7 +13,8 @@ const testBugs = [
   {
     subdomain: 'acme-demo',
     errorMessage: 'Payment processing failed - Card declined',
-    stackTrace: 'Error: Payment declined\n    at processPayment (payment.ts:45)\n    at handleCheckout (checkout.ts:123)',
+    stackTrace:
+      'Error: Payment declined\n    at processPayment (payment.ts:45)\n    at handleCheckout (checkout.ts:123)',
     severity: 'critical',
     demo: 'kazbank',
     elementId: 'checkout-btn',
@@ -19,7 +22,8 @@ const testBugs = [
   {
     subdomain: 'acme-demo',
     errorMessage: 'Failed to load user profile',
-    stackTrace: 'TypeError: Cannot read property "name" of undefined\n    at UserProfile.render (profile.tsx:12)',
+    stackTrace:
+      'TypeError: Cannot read property "name" of undefined\n    at UserProfile.render (profile.tsx:12)',
     severity: 'high',
     demo: 'kazbank',
     elementId: 'user-profile',
@@ -42,7 +46,8 @@ const testBugs = [
   {
     subdomain: 'retail-demo',
     errorMessage: 'Cart total calculation incorrect',
-    stackTrace: 'Error: Tax calculation mismatch\n    at calculateTotal (cart.ts:89)\n    at updateCart (cart.ts:45)',
+    stackTrace:
+      'Error: Tax calculation mismatch\n    at calculateTotal (cart.ts:89)\n    at updateCart (cart.ts:45)',
     severity: 'critical',
     demo: 'quickmart',
     elementId: 'cart-total',
@@ -66,7 +71,8 @@ const testBugs = [
   {
     subdomain: 'startup-xyz',
     errorMessage: 'Search results not displaying',
-    stackTrace: 'TypeError: Cannot read property "results" of null\n    at displayResults (search.tsx:78)',
+    stackTrace:
+      'TypeError: Cannot read property "results" of null\n    at displayResults (search.tsx:78)',
     severity: 'medium',
     demo: 'quickmart',
   },
@@ -75,7 +81,7 @@ const testBugs = [
 async function createSession(subdomain, company) {
   const now = Date.now();
   const SESSION_TTL = 2 * 60 * 60; // 2 hours
-  
+
   const session = {
     subdomain,
     company,
@@ -145,7 +151,6 @@ async function seedData() {
     console.log(`  - ${sessions.length} demo sessions`);
     console.log(`  - ${testBugs.length} test bugs`);
     console.log(`\nYou can now view them in the admin panel at https://demo.bugspotter.io/admin`);
-    
   } catch (error) {
     console.error('❌ Error seeding data:', error);
     process.exit(1);

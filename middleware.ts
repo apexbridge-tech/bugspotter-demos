@@ -40,7 +40,7 @@ export function middleware(request: NextRequest) {
     // and it's not just "demo.bugspotter.io"
     if (parts.length >= 3 && parts[0] !== 'demo') {
       fullSubdomain = parts[0];
-      
+
       // Parse {demo}-{session} format (e.g., kazbank-acme-demo)
       const demoMatch = fullSubdomain.match(/^(kazbank|talentflow|quickmart)-(.+)$/);
       if (demoMatch) {
@@ -68,7 +68,7 @@ export function middleware(request: NextRequest) {
     url.pathname.includes('.')
   ) {
     const response = NextResponse.next();
-    
+
     // Still set headers for API routes so they can access subdomain info
     if (fullSubdomain) {
       response.headers.set('X-Client-Subdomain', fullSubdomain);
@@ -77,7 +77,7 @@ export function middleware(request: NextRequest) {
       }
       response.headers.set('X-Session-ID', session);
     }
-    
+
     return response;
   }
 
