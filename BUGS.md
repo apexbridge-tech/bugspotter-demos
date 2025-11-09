@@ -1,6 +1,6 @@
 # Bug Reference Guide
 
-This document lists all intentional bugs in the demo system for easy testing.
+This document lists all intentional bugs in the demo system for easy testing...
 
 ## Bug Injection Mechanism
 
