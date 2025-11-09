@@ -39,7 +39,7 @@ export async function initializeBugSpotter(
 
     // Initialize SDK with API key and auth configuration
     const instance = BugSpotter.init({
-      endpoint: process.env.NEXT_PUBLIC_BUGSPOTTER_API || 'https://demo.api.bugspotter.io',
+      endpoint: `${process.env.NEXT_PUBLIC_BUGSPOTTER_API}/api/v1/reports`,
       auth: {
         type: 'api-key',
         apiKey,
