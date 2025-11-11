@@ -8,10 +8,12 @@ import type { BugSpotterSDK } from '@/types/bug';
 /**
  * Initialize BugSpotter SDK with API key from session
  * @param apiKey - The API key for the specific demo project
+ * @param projectId - The project ID for authentication
  * @param sessionId - The session ID for tracking
  */
 export async function initializeBugSpotter(
   apiKey: string,
+  projectId: string,
   sessionId?: string
 ): Promise<BugSpotterSDK | null> {
   // Check if SDK is disabled
@@ -43,6 +45,7 @@ export async function initializeBugSpotter(
       auth: {
         type: 'api-key' as const,
         apiKey,
+        projectId,
       },
       showWidget: true, // Show floating bug report button
       widgetOptions: {
@@ -82,14 +85,14 @@ export async function initializeBugSpotter(
 }
 
 /**
- * Fetch API key for a specific demo site from the session
+ * Fetch API key and project ID for a specific demo site from the session
  * @param sessionId - The session ID
  * @param demo - The demo site name (kazbank, talentflow, quickmart)
  */
 export async function fetchDemoApiKey(
   sessionId: string,
   demo: 'kazbank' | 'talentflow' | 'quickmart'
-): Promise<string | null> {
+): Promise<{ apiKey: string; projectId: string } | null> {
   try {
     console.log('[fetchDemoApiKey] Fetching API key for:', { sessionId, demo });
     const response = await fetch(`/api/demo/get-api-key?sessionId=${sessionId}&demo=${demo}`);
@@ -108,7 +111,12 @@ export async function fetchDemoApiKey(
       apiKeyPrefix: data.apiKey?.substring(0, 10) + '...'
     });
     
-    return data.apiKey || null;
+    if (!data.apiKey || !data.projectId) {
+      console.error('[fetchDemoApiKey] Missing apiKey or projectId in response');
+      return null;
+    }
+    
+    return { apiKey: data.apiKey, projectId: data.projectId };
   } catch (error) {
     console.error('[fetchDemoApiKey] Error fetching demo API key:', error);
     return null;

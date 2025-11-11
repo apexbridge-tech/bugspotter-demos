@@ -150,14 +150,14 @@ export default function KazBankDemo() {
       }
 
       // Fetch API key for this demo from the session
-      const apiKey = await fetchDemoApiKey(sessionId, 'kazbank');
+      const credentials = await fetchDemoApiKey(sessionId, 'kazbank');
 
-      if (!apiKey) {
+      if (!credentials) {
         console.warn('⚠️ No API key found for KazBank demo, continuing without SDK');
         return null;
       }
 
-      const bugspotterSDK = await initializeBugSpotter(apiKey, sessionId);
+      const bugspotterSDK = await initializeBugSpotter(credentials.apiKey, credentials.projectId, sessionId);
 
       if (bugspotterSDK) {
         console.info('✅ BugSpotter SDK ready for KazBank demo');
