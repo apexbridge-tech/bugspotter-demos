@@ -34,6 +34,9 @@ export default function TalentFlowDemo() {
 
       if (bugspotterSDK) {
         console.info('✅ BugSpotter SDK ready for TalentFlow demo');
+        // Expose SDK instance globally for debugging
+        (window as any).__BUGSPOTTER__ = bugspotterSDK;
+        console.info('💡 Check SDK version with: __BUGSPOTTER__.getConfig()');
       } else {
         console.warn('⚠️ BugSpotter SDK initialization failed, continuing with demo only');
       }
