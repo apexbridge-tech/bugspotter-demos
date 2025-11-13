@@ -23,14 +23,14 @@ export default function TalentFlowDemo() {
       }
 
       // Fetch API key for this demo from the session
-      const apiKey = await fetchDemoApiKey(sessionId, 'talentflow');
+      const credentials = await fetchDemoApiKey(sessionId, 'talentflow');
 
-      if (!apiKey) {
+      if (!credentials) {
         console.warn('⚠️ No API key found for TalentFlow demo, continuing without SDK');
         return null;
       }
 
-      const bugspotterSDK = await initializeBugSpotter(apiKey, sessionId);
+      const bugspotterSDK = await initializeBugSpotter(credentials.apiKey, credentials.projectId, sessionId);
 
       if (bugspotterSDK) {
         console.info('✅ BugSpotter SDK ready for TalentFlow demo');
