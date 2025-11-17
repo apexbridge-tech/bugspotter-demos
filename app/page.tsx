@@ -7,6 +7,12 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionCreated, setSessionCreated] = useState(false);
+  const [sessionData, setSessionData] = useState<{
+    subdomain: string;
+    magicLink?: string;
+    email: string;
+  } | null>(null);
 
   const handleCreateDemo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +31,13 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-        // Redirect to the dashboard with clean session-only URL
-        const { subdomain } = data.session;
-
-        // For local development
-        if (window.location.hostname === 'localhost') {
-          window.location.href = `http://localhost:3000/${subdomain}`;
-        } else {
-          // For production: use session-only subdomain (e.g., alex-g5po.demo.bugspotter.io)
-          window.location.href = `https://${subdomain}.demo.bugspotter.io`;
-        }
+        // Show success screen with magic link
+        setSessionData({
+          subdomain: data.session.subdomain,
+          magicLink: data.session.magicLink,
+          email: data.session.email,
+        });
+        setSessionCreated(true);
       } else {
         setError(data.error || 'Failed to create demo session');
       }
@@ -67,6 +70,73 @@ export default function Home() {
         </div>
 
         {/* Demo Creation Form */}
+        {sessionCreated && sessionData ? (
+          /* Success Screen */
+          <div className="max-w-2xl mx-auto mb-16">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  Demo Session Created!
+                </h2>
+                <p className="text-gray-600">
+                  We've sent all the details to <strong>{sessionData.email}</strong>
+                </p>
+              </div>
+
+              {sessionData.magicLink && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <span className="text-xl">🔓</span>
+                    Instant Access to BugSpotter Admin
+                  </h3>
+                  <p className="text-gray-700 text-sm mb-4">
+                    Click the button below to securely login to BugSpotter Admin (no password required):
+                  </p>
+                  <a
+                    href={sessionData.magicLink}
+                    className="block w-full text-center px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    🔐 Login to BugSpotter Admin →
+                  </a>
+                  <p className="text-gray-600 text-xs mt-3 text-center">
+                    This magic link is valid for 1 hour and can only be used once.
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">📧 Check Your Email</h3>
+                <p className="text-blue-800 text-sm">
+                  We've sent a detailed email with all demo links, credentials, and instructions to get started.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <a
+                  href={`/${sessionData.subdomain}`}
+                  className="block w-full text-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  🎯 Go to Demo Dashboard
+                </a>
+                <button
+                  onClick={() => {
+                    setSessionCreated(false);
+                    setSessionData(null);
+                    setCompany('');
+                    setEmail('');
+                  }}
+                  className="block w-full text-center px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                >
+                  Create Another Session
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Demo Creation Form */
         <div className="max-w-md mx-auto mb-16">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
@@ -131,6 +201,7 @@ export default function Home() {
             </p>
           </div>
         </div>
+        )}
 
         {/* Demo Previews */}
         <div className="max-w-6xl mx-auto">
