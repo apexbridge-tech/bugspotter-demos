@@ -534,7 +534,9 @@ export async function POST(request: NextRequest) {
       let magicLink = '';
       if (magicLinkResponse.ok) {
         const magicLinkData = await magicLinkResponse.json();
-        magicLink = magicLinkData.magicLink;
+        const magicToken = magicLinkData.token;
+        // Point to BugSpotter admin, not our demo admin
+        magicLink = `https://demo.admin.bugspotter.io/auth/magic-login?token=${magicToken}`;
         console.log('[Session] ✅ Magic link generated:', magicLink);
       } else {
         console.warn('[Session] ⚠️ Failed to generate magic link, will send credentials instead');
