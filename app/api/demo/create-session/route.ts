@@ -62,6 +62,7 @@ interface DemoSessionData {
   email: string;
   userId: string;
   userPassword: string;
+  magicLink?: string;
   projects: BugSpotterProject[];
   createdAt: number;
   expiresAt: number;
@@ -302,9 +303,28 @@ async function sendDemoCredentialsEmail(
       </p>
 
       ${
-        sessionData.userPassword
+        sessionData.magicLink
           ? `
-      <!-- BugSpotter Admin Access -->
+      <!-- Magic Link Access (Primary) -->
+      <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 30px 0; border-radius: 4px;">
+        <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">🔐 BugSpotter Admin Access</h2>
+        <p style="margin: 0 0 15px; color: #6b7280; font-size: 14px;">Click the button below to securely login to BugSpotter Admin (no password required):</p>
+        <a href="${sessionData.magicLink}" style="display: inline-block; margin-top: 10px; padding: 12px 24px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">🔓 Login to BugSpotter Admin →</a>
+        <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">This magic link is valid for 1 hour and can only be used once.</p>
+        ${sessionData.userPassword ? `
+        <details style="margin-top: 15px;">
+          <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Alternative: Manual Login Credentials</summary>
+          <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+            <p style="margin: 0 0 5px; color: #6b7280; font-size: 13px;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">${sessionData.userPassword}</code></p>
+          </div>
+        </details>
+        ` : ''}
+      </div>
+      `
+          : sessionData.userPassword
+            ? `
+      <!-- BugSpotter Admin Access (Fallback) -->
       <div style="background-color: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 4px;">
         <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">🔐 BugSpotter Admin Access</h2>
         <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Email:</strong> ${email}</p>
@@ -312,7 +332,7 @@ async function sendDemoCredentialsEmail(
         <a href="${bugspotterAdminUrl}" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #667eea; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Login to BugSpotter Admin →</a>
       </div>
       `
-          : ''
+            : ''
       }
 
       <!-- Demo Dashboard -->
@@ -497,6 +517,28 @@ export async function POST(request: NextRequest) {
       );
       console.log('[Session] ✅ User created:', userId);
 
+      // Generate magic link for the created user
+      console.log('[Session] Generating magic link...');
+      const magicLinkResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/auth/magic-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      let magicLink = '';
+      if (magicLinkResponse.ok) {
+        const magicLinkData = await magicLinkResponse.json();
+        magicLink = magicLinkData.magicLink;
+        console.log('[Session] ✅ Magic link generated:', magicLink);
+      } else {
+        console.warn('[Session] ⚠️ Failed to generate magic link, will send credentials instead');
+      }
+
       // Create 3 projects with user's token (making them the owner)
       console.log('[Session] Creating BugSpotter projects as user...');
       const projects = await createBugSpotterProjects(company, sessionId, userAuthToken);
@@ -514,6 +556,7 @@ export async function POST(request: NextRequest) {
         email,
         userId,
         userPassword: password,
+        magicLink: magicLink || undefined,
         projects,
         createdAt: localSession.createdAt,
         expiresAt: localSession.expiresAt,
@@ -558,6 +601,7 @@ export async function POST(request: NextRequest) {
           subdomain: sessionId,
           company,
           email,
+          magicLink: magicLink || undefined,
           expiresAt: localSession.expiresAt,
           projects: projects.map((p) => ({
             name: p.name,

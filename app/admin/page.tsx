@@ -436,9 +436,33 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('admin-session');
-    if (saved) {
-      setSessionToken(saved);
+    // Check for magic link token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+      // Authenticate with magic link token
+      fetch(`/api/auth/magic-link?token=${token}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setSessionToken(data.sessionToken);
+            localStorage.setItem('admin-session', data.sessionToken);
+            // Remove token from URL
+            window.history.replaceState({}, '', '/admin');
+          } else {
+            setError(data.error || 'Invalid or expired magic link');
+          }
+        })
+        .catch(() => {
+          setError('Failed to authenticate with magic link');
+        });
+    } else {
+      // Check for existing session
+      const saved = localStorage.getItem('admin-session');
+      if (saved) {
+        setSessionToken(saved);
+      }
     }
   }, []);
 
