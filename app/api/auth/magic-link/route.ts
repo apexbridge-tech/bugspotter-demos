@@ -13,16 +13,19 @@ function getRedis() {
   });
 }
 
-if (!process.env.BUGSPOTTER_API_URL) {
-  throw new Error('BUGSPOTTER_API_URL environment variable is required');
+function getBugSpotterConfig() {
+  if (!process.env.BUGSPOTTER_API_URL) {
+    throw new Error('BUGSPOTTER_API_URL environment variable is required');
+  }
+  return process.env.BUGSPOTTER_API_URL;
 }
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
+function getJWTSecret() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return process.env.JWT_SECRET;
 }
-
-const BUGSPOTTER_API = process.env.BUGSPOTTER_API_URL;
-const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Generate a JWT magic token for BugSpotter API magic login
@@ -30,6 +33,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
  */
 export async function POST(request: NextRequest) {
   try {
+    const jwtSecret = getJWTSecret();
+    
     const body = await request.json();
     const { userId, userEmail, role } = body;
 
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
         role: role || 'user',
         type: 'magic', // Required by BugSpotter API
       },
-      JWT_SECRET,
+      jwtSecret,
       {
         expiresIn: '1h', // 1 hour expiry
       }
@@ -82,6 +87,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const bugspotterApi = getBugSpotterConfig();
+    
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
@@ -93,7 +100,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Authenticate with BugSpotter API using magic login
-    const response = await fetch(`${BUGSPOTTER_API}/api/v1/auth/magic-login`, {
+    const response = await fetch(`${bugspotterApi}/api/v1/auth/magic-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
