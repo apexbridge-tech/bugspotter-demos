@@ -13,8 +13,16 @@ function getRedis() {
   });
 }
 
-const BUGSPOTTER_API = process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io';
-const JWT_SECRET = process.env.JWT_SECRET || 'demo-secret-key-change-in-production';
+if (!process.env.BUGSPOTTER_API_URL) {
+  throw new Error('BUGSPOTTER_API_URL environment variable is required');
+}
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
+const BUGSPOTTER_API = process.env.BUGSPOTTER_API_URL;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Generate a JWT magic token for BugSpotter API magic login
