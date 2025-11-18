@@ -231,8 +231,7 @@ async function sendDemoCredentialsEmail(
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const dashboardUrl = `${baseUrl}/${sessionData.subdomain}/dashboard`;
   // Use BUGSPOTTER_ADMIN_URL if set, otherwise derive from API URL
-  const bugspotterAdminUrl = process.env.BUGSPOTTER_ADMIN_URL || 
-    (process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io').replace('api.', 'admin.');
+  const bugspotterAdminUrl = process.env.BUGSPOTTER_ADMIN_URL;
 
   // Always log credentials to console for debugging
   console.log('=== DEMO CREDENTIALS ===');
@@ -313,7 +312,9 @@ async function sendDemoCredentialsEmail(
         <p style="margin: 0 0 15px; color: #6b7280; font-size: 14px;">Click the button below to securely login to BugSpotter Admin (no password required):</p>
         <a href="${sessionData.magicLink}" style="display: inline-block; margin-top: 10px; padding: 12px 24px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">🔓 Login to BugSpotter Admin →</a>
         <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">This magic link is valid for 1 hour and can only be used once.</p>
-        ${sessionData.userPassword ? `
+        ${
+          sessionData.userPassword
+            ? `
         <details style="margin-top: 15px;">
           <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Alternative: Manual Login Credentials</summary>
           <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
@@ -321,7 +322,9 @@ async function sendDemoCredentialsEmail(
             <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">${sessionData.userPassword}</code></p>
           </div>
         </details>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       `
           : sessionData.userPassword
@@ -521,26 +524,33 @@ export async function POST(request: NextRequest) {
 
       // Generate magic link for the created user
       console.log('[Session] Generating magic link...');
-      const magicLinkResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/auth/magic-link`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          userEmail: email,
-          role: 'user',
-        }),
-      });
+      const magicLinkResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/auth/magic-link`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            userEmail: email,
+            role: 'user',
+          }),
+        }
+      );
 
       let magicLink = '';
       if (magicLinkResponse.ok) {
         const magicLinkData = await magicLinkResponse.json();
         const magicToken = magicLinkData.token;
         // Use BUGSPOTTER_ADMIN_URL if set, otherwise derive from API URL
-        const adminUrl = process.env.BUGSPOTTER_ADMIN_URL || 
-          (process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io').replace('api.', 'admin.');
-        magicLink = `${adminUrl}/auth/magic-login?token=${magicToken}`;
+        const adminUrl =
+          process.env.BUGSPOTTER_ADMIN_URL ||
+          (process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io').replace(
+            'api.',
+            'admin.'
+          );
+        magicLink = `${adminUrl}/login?token=${magicToken}`;
         console.log('[Session] ✅ Magic link generated:', magicLink);
       } else {
         console.warn('[Session] ⚠️ Failed to generate magic link, will send credentials instead');
