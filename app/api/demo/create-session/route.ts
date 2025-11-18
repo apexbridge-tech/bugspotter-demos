@@ -230,8 +230,9 @@ async function sendDemoCredentialsEmail(
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const dashboardUrl = `${baseUrl}/${sessionData.subdomain}/dashboard`;
-  const apiUrl = process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io';
-  const bugspotterAdminUrl = apiUrl.replace('api.', 'admin.');
+  // Use BUGSPOTTER_ADMIN_URL if set, otherwise derive from API URL
+  const bugspotterAdminUrl = process.env.BUGSPOTTER_ADMIN_URL || 
+    (process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io').replace('api.', 'admin.');
 
   // Always log credentials to console for debugging
   console.log('=== DEMO CREDENTIALS ===');
@@ -536,9 +537,9 @@ export async function POST(request: NextRequest) {
       if (magicLinkResponse.ok) {
         const magicLinkData = await magicLinkResponse.json();
         const magicToken = magicLinkData.token;
-        // Use BUGSPOTTER_API_URL env variable to construct the admin URL
-        const apiUrl = process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io';
-        const adminUrl = apiUrl.replace('api.', 'admin.');
+        // Use BUGSPOTTER_ADMIN_URL if set, otherwise derive from API URL
+        const adminUrl = process.env.BUGSPOTTER_ADMIN_URL || 
+          (process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugspotter.io').replace('api.', 'admin.');
         magicLink = `${adminUrl}/auth/magic-login?token=${magicToken}`;
         console.log('[Session] ✅ Magic link generated:', magicLink);
       } else {
