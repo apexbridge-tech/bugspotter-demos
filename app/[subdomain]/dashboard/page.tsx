@@ -220,8 +220,10 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <h2 className="text-lg font-bold text-gray-800 mb-4">Demo Sites</h2>
           <div className="grid md:grid-cols-3 gap-4">
-            <Link
-              href={`/${subdomain}/kazbank`}
+            <a
+              href={getDemoUrl('kazbank')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -233,9 +235,11 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 Banking demo with transfer, statement, and currency bugs
               </p>
-            </Link>
-            <Link
-              href={`/${subdomain}/talentflow`}
+            </a>
+            <a
+              href={getDemoUrl('talentflow')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -247,9 +251,11 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 HR demo with search, upload, and scheduling bugs
               </p>
-            </Link>
-            <Link
-              href={`/${subdomain}/quickmart`}
+            </a>
+            <a
+              href={getDemoUrl('quickmart')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-4 border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -261,7 +267,7 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">
                 E-commerce demo with cart, checkout, and promo bugs
               </p>
-            </Link>
+            </a>
           </div>
         </div>
 
