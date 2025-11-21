@@ -67,7 +67,7 @@ export async function initializeBugSpotter(
 
     console.info('📋 BugSpotter.init() config:', JSON.stringify(config, null, 2));
 
-    const instance = BugSpotter.init(config);
+    const instance = await BugSpotter.init(config);
 
     console.info('✅ BugSpotter SDK initialized successfully');
     console.info('🎨 Widget enabled: true');
