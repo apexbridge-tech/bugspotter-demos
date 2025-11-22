@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@bugspotter/sdk':
-        specifier: 0.2.0-alpha.5
-        version: 0.2.0-alpha.5
+        specifier: 0.2.1-alpha.5
+        version: 0.2.1-alpha.5
       '@slack/web-api':
         specifier: ^7.12.0
         version: 7.12.0
@@ -192,8 +192,8 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
-  '@bugspotter/sdk@0.2.0-alpha.5':
-    resolution: {integrity: sha512-cGkI4+rwndNsJCMRu3vCNPdrFMrURiG0wBsHcxDGx5t/thSQp2usr+SiPOVkIRMknCppBbxJrQA3X3mP/jvSxg==}
+  '@bugspotter/sdk@0.2.1-alpha.5':
+    resolution: {integrity: sha512-CHSJ//8DQr5XoKfapurYDr5GlDA2RYZNEYQ9qXq08826rCiFABUt+xW+rC5FWqKyOxaqeijgm9+KDb6u1vxVBw==}
     engines: {node: '>=16.0.0'}
 
   '@emnapi/core@1.6.0':
@@ -2631,7 +2631,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bugspotter/sdk@0.2.0-alpha.5':
+  '@bugspotter/sdk@0.2.1-alpha.5':
     dependencies:
       '@rrweb/types': 2.0.0-alpha.18
       html-to-image: 1.11.13
