@@ -28,7 +28,7 @@ This demo system creates isolated, time-limited environments where potential cus
 
 ### BugSpotter Integration
 
-- **Real SDK**: Uses `@bugspotter/sdk@0.2.1-alpha.5` (not simulated)
+- **Real SDK**: Uses `@bugspotter/sdk@0.2.2-alpha.5` (not simulated)
 - **Live Projects**: Creates 3 actual BugSpotter projects per session
 - **Production API Keys**: Generates real API keys with custom permissions
 - **User Accounts**: Creates authenticated users with admin panel access
@@ -47,7 +47,7 @@ This demo system creates isolated, time-limited environments where potential cus
 - **Framework**: Next.js 15.0.0 (App Router + Turbopack)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4
-- **Bug Tracking**: @bugspotter/sdk 0.2.1-alpha.5
+- **Bug Tracking**: @bugspotter/sdk 0.2.2-alpha.5
 - **Database**: Upstash Redis (session storage)
 - **Email**: Resend 6.4.1 (credential delivery)
 - **Authentication**: Custom OAuth with bcryptjs + speakeasy (TOTP 2FA)
