@@ -22,7 +22,7 @@
     "dotenv": "^17.2.3",
     "jira-client": "^8.2.2",
     "jsonwebtoken": "^9.0.2",
-    "next": "16.0.0",
+    "next": "16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "resend": "^6.4.1",
