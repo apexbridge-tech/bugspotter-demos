@@ -18,9 +18,13 @@ const BUGSPOTTER_ADMIN_EMAIL = process.env.BUGSPOTTER_ADMIN_EMAIL;
 const BUGSPOTTER_ADMIN_PASSWORD = process.env.BUGSPOTTER_ADMIN_PASSWORD;
 
 // JIRA Configuration
-const JIRA_URL = process.env.JIRA_URL || 'https://bugspotter-team-cbvd4hje.atlassian.net';
+const JIRA_URL = process.env.JIRA_URL;
 const JIRA_EMAIL = process.env.JIRA_EMAIL;
 const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
+const JIRA_AUTH_HEADER =
+  JIRA_EMAIL && JIRA_API_TOKEN
+    ? `Basic ${Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64')}`
+    : undefined;
 
 // Session duration: 2 hours + 1 minute
 const SESSION_DURATION_MS = (2 * 60 * 60 + 60) * 1000; // 2 hours 1 minute in milliseconds
@@ -171,75 +175,92 @@ async function createBugSpotterProjects(
 
 /**
  * Create a JIRA project for the demo session
+ *
+ * @param company - The company name used to generate the project key and name
+ * @param sessionId - The unique session identifier used in the project name
+ * @returns An object containing projectKey (JIRA project key), projectId (JIRA project ID),
+ *          and projectUrl (URL to the JIRA board), or null if JIRA is not configured or creation fails
  */
 async function createJiraProject(
   company: string,
   sessionId: string
 ): Promise<{ projectKey: string; projectId: string; projectUrl: string } | null> {
-  if (!JIRA_EMAIL || !JIRA_API_TOKEN) {
-    console.log('[JIRA] Credentials not configured, skipping JIRA project creation');
+  if (!JIRA_URL || !JIRA_EMAIL || !JIRA_API_TOKEN) {
+    console.log('[JIRA] JIRA configuration incomplete, skipping JIRA project creation');
+    console.log(
+      '[JIRA] Missing:',
+      [!JIRA_URL && 'JIRA_URL', !JIRA_EMAIL && 'JIRA_EMAIL', !JIRA_API_TOKEN && 'JIRA_API_TOKEN']
+        .filter(Boolean)
+        .join(', ')
+    );
     return null;
   }
 
-  try {
-    // Generate unique project key (max 10 chars, uppercase, starts with letter)
-    const baseKey = company
-      .replace(/[^a-zA-Z0-9]/g, '')
-      .toUpperCase()
-      .substring(0, 6);
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const projectKey = `${baseKey || 'DEMO'}${randomSuffix}`;
+  // Generate unique project key (max 10 chars, uppercase, starts with letter)
+  const baseKey = company
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .substring(0, 6);
+  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const projectKey = `${baseKey || 'DEMO'}${randomSuffix}`;
 
-    const projectName = `${company} - Demo Session ${sessionId}`;
+  const projectName = `${company} - Demo Session ${sessionId}`;
 
-    console.log('[JIRA] Creating project:', projectName);
-    console.log('[JIRA] Project key:', projectKey);
+  console.log('[JIRA] Creating project:', projectName);
+  console.log('[JIRA] Project key:', projectKey);
 
-    // Create project via JIRA API
-    const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64');
+  // Create project via JIRA API
+  const response = await fetch(`${JIRA_URL}/rest/api/3/project`, {
+    method: 'POST',
+    headers: {
+      Authorization: JIRA_AUTH_HEADER!,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      key: projectKey,
+      name: projectName,
+      projectTypeKey: 'software',
+      projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+      description: `Demo session for ${company}. Auto-expires after 2 hours.`,
+      leadAccountId: undefined, // Will use default (API token owner)
+      assigneeType: 'PROJECT_LEAD',
+    }),
+  });
 
-    const response = await fetch(`${JIRA_URL}/rest/api/3/project`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        key: projectKey,
-        name: projectName,
-        projectTypeKey: 'software',
-        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
-        description: `Demo session for ${company}. Auto-expires after 2 hours.`,
-        leadAccountId: undefined, // Will use default (API token owner)
-        assigneeType: 'PROJECT_LEAD',
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('[JIRA] Failed to create project:', error);
-      throw new Error(`Failed to create JIRA project: ${error}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorDetails = errorText;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorDetails = JSON.stringify(errorJson, null, 2);
+      console.error('[JIRA] Failed to create project. Status:', response.status);
+      console.error('[JIRA] Error details:', errorJson);
+      if (errorJson.errorMessages) {
+        console.error('[JIRA] Error messages:', errorJson.errorMessages);
+      }
+      if (errorJson.errors) {
+        console.error('[JIRA] Field errors:', errorJson.errors);
+      }
+    } catch {
+      console.error('[JIRA] Failed to create project:', errorText);
     }
-
-    const projectData = await response.json();
-    const projectId = projectData.id;
-    const projectUrl = `${JIRA_URL}/jira/software/projects/${projectKey}/board`;
-
-    console.log('[JIRA] ✅ Project created successfully');
-    console.log('[JIRA] Project ID:', projectId);
-    console.log('[JIRA] Project URL:', projectUrl);
-
-    return {
-      projectKey,
-      projectId,
-      projectUrl,
-    };
-  } catch (error) {
-    console.error('[JIRA] ❌ Error creating project:', error);
-    // Don't fail the entire session creation if JIRA fails
-    return null;
+    throw new Error(`Failed to create JIRA project: ${errorDetails}`);
   }
+
+  const projectData = await response.json();
+  const projectId = projectData.id;
+  const projectUrl = `${JIRA_URL}/jira/software/projects/${projectKey}/board`;
+
+  console.log('[JIRA] ✅ Project created successfully');
+  console.log('[JIRA] Project ID:', projectId);
+  console.log('[JIRA] Project URL:', projectUrl);
+
+  return {
+    projectKey,
+    projectId,
+    projectUrl,
+  };
 }
 
 async function createBugSpotterUser(
@@ -299,6 +320,20 @@ async function createBugSpotterUser(
   return { userId, password, userAuthToken };
 }
 
+/**
+ * HTML-escape user input to prevent HTML injection in email templates
+ */
+function escapeHtml(text: string): string {
+  const htmlEscapeMap: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, (char) => htmlEscapeMap[char]);
+}
+
 async function sendDemoCredentialsEmail(
   email: string,
   company: string,
@@ -313,6 +348,14 @@ async function sendDemoCredentialsEmail(
   const dashboardUrl = `${baseUrl}/${sessionData.subdomain}/dashboard`;
   // Use BUGSPOTTER_ADMIN_URL if set, otherwise derive from API URL
   const bugspotterAdminUrl = process.env.BUGSPOTTER_ADMIN_URL;
+
+  // Escape user input for safe HTML rendering
+  const safeCompany = escapeHtml(company);
+  const safeEmail = escapeHtml(email);
+  const safeSessionId = escapeHtml(sessionData.subdomain);
+  const safeJiraProjectKey = sessionData.jiraProjectKey
+    ? escapeHtml(sessionData.jiraProjectKey)
+    : '';
 
   // Always log credentials to console for debugging
   console.log('=== DEMO CREDENTIALS ===');
@@ -363,9 +406,9 @@ async function sendDemoCredentialsEmail(
       .map(
         (p) => `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${p.name}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${p.id}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${p.apiKey}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(p.name)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${escapeHtml(p.id)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${escapeHtml(p.apiKey)}</td>
         </tr>
       `
       )
@@ -384,7 +427,7 @@ async function sendDemoCredentialsEmail(
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
       <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">🎉 Your BugSpotter Demo is Ready!</h1>
-      <p style="margin: 10px 0 0; color: #e0e7ff; font-size: 16px;">Welcome to ${company}</p>
+      <p style="margin: 10px 0 0; color: #e0e7ff; font-size: 16px;">Welcome to ${safeCompany}</p>
     </div>
 
     <!-- Content -->
@@ -408,8 +451,8 @@ async function sendDemoCredentialsEmail(
         <details style="margin-top: 15px;">
           <summary style="cursor: pointer; color: #6b7280; font-size: 13px;">Alternative: Manual Login Credentials</summary>
           <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
-            <p style="margin: 0 0 5px; color: #6b7280; font-size: 13px;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">${sessionData.userPassword}</code></p>
+            <p style="margin: 0 0 5px; color: #6b7280; font-size: 13px;"><strong>Email:</strong> ${safeEmail}</p>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">${escapeHtml(sessionData.userPassword)}</code></p>
           </div>
         </details>
         `
@@ -422,8 +465,8 @@ async function sendDemoCredentialsEmail(
       <!-- BugSpotter Admin Access (Fallback) -->
       <div style="background-color: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 4px;">
         <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">🔐 BugSpotter Admin Access</h2>
-        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Email:</strong> ${email}</p>
-        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${sessionData.userPassword}</code></p>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Email:</strong> ${safeEmail}</p>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${escapeHtml(sessionData.userPassword)}</code></p>
         <a href="${bugspotterAdminUrl}" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #667eea; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Login to BugSpotter Admin →</a>
       </div>
       `
@@ -444,7 +487,7 @@ async function sendDemoCredentialsEmail(
       <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
         <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">📊 JIRA Integration</h2>
         <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">View bug tickets created in JIRA:</p>
-        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Project:</strong> ${sessionData.jiraProjectKey}</p>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Project:</strong> ${safeJiraProjectKey}</p>
         <a href="${sessionData.jiraProjectUrl}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Open JIRA Board →</a>
         <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">Bugs triggered in the demo will automatically create tickets in this JIRA project.</p>
       </div>
@@ -487,7 +530,7 @@ async function sendDemoCredentialsEmail(
       <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 30px 0; border-radius: 4px;">
         <h2 style="margin: 0 0 10px; color: #92400e; font-size: 16px; font-weight: 600;">⏰ Session Information</h2>
         <p style="margin: 0; color: #78350f; font-size: 14px;">
-          <strong>Session ID:</strong> ${sessionData.subdomain}<br>
+          <strong>Session ID:</strong> ${safeSessionId}<br>
           <strong>Valid until:</strong> ${new Date(sessionData.expiresAt).toLocaleString('en-US', {
             dateStyle: 'full',
             timeStyle: 'short',
@@ -626,6 +669,9 @@ export async function POST(request: NextRequest) {
       : '❌ Missing'
   );
   console.log('  RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL || 'default');
+  console.log('  JIRA_URL:', process.env.JIRA_URL ? '✅ Set' : '❌ Missing');
+  console.log('  JIRA_EMAIL:', process.env.JIRA_EMAIL ? '✅ Set' : '❌ Missing');
+  console.log('  JIRA_API_TOKEN:', process.env.JIRA_API_TOKEN ? '✅ Set' : '❌ Missing');
   try {
     const body = await request.json();
     const { company, email } = body;
@@ -725,11 +771,22 @@ export async function POST(request: NextRequest) {
 
       // Create JIRA project
       console.log('[Session] Creating JIRA project...');
-      const jiraProject = await createJiraProject(company, sessionId);
-      if (jiraProject) {
-        console.log('[Session] ✅ JIRA project created:', jiraProject.projectKey);
-      } else {
-        console.log('[Session] ⚠️  JIRA project creation skipped or failed');
+      let jiraProject = null;
+      try {
+        jiraProject = await createJiraProject(company, sessionId);
+        if (jiraProject) {
+          console.log('[Session] ✅ JIRA project created:', jiraProject.projectKey);
+        } else {
+          console.log('[Session] ⚠️  JIRA not configured, skipping project creation');
+        }
+      } catch (jiraError) {
+        console.error('[Session] ❌ JIRA project creation failed:', jiraError);
+        console.error(
+          '[Session] Error:',
+          jiraError instanceof Error ? jiraError.message : String(jiraError)
+        );
+        console.log('[Session] ⚠️  Continuing with session creation despite JIRA failure');
+        // Continue with session creation even if JIRA fails
       }
 
       // Store complete session data

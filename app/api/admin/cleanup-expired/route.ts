@@ -16,9 +16,13 @@ const BUGSPOTTER_ADMIN_EMAIL = process.env.BUGSPOTTER_ADMIN_EMAIL;
 const BUGSPOTTER_ADMIN_PASSWORD = process.env.BUGSPOTTER_ADMIN_PASSWORD;
 
 // JIRA Configuration
-const JIRA_URL = process.env.JIRA_URL || 'https://bugspotter-team-cbvd4hje.atlassian.net';
+const JIRA_URL = process.env.JIRA_URL;
 const JIRA_EMAIL = process.env.JIRA_EMAIL;
 const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
+const JIRA_AUTH_HEADER =
+  JIRA_EMAIL && JIRA_API_TOKEN
+    ? `Basic ${Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64')}`
+    : undefined;
 
 async function getBugSpotterAuthToken(): Promise<string> {
   if (!BUGSPOTTER_ADMIN_EMAIL || !BUGSPOTTER_ADMIN_PASSWORD) {
@@ -87,25 +91,53 @@ async function deleteApiKey(apiKeyId: string, authToken: string): Promise<void> 
   }
 }
 
+/**
+ * Delete a JIRA project via the JIRA REST API
+ *
+ * @param projectIdOrKey - The JIRA project identifier (can be either the numeric project ID or the project key)
+ * @throws {Error} When JIRA credentials are not configured, preventing orphaned resources
+ * @throws {Error} When the JIRA API request fails with detailed error information
+ * @returns void on successful deletion
+ */
 async function deleteJiraProject(projectIdOrKey: string): Promise<void> {
-  if (!JIRA_EMAIL || !JIRA_API_TOKEN) {
-    console.log('[JIRA] Credentials not configured, skipping JIRA deletion');
-    return;
+  if (!JIRA_URL || !JIRA_AUTH_HEADER) {
+    console.warn(
+      `[JIRA] ⚠️  WARNING: Cannot delete JIRA project ${projectIdOrKey} - credentials not configured!`
+    );
+    console.warn(
+      '[JIRA] This will leave orphaned JIRA projects. Ensure JIRA_URL, JIRA_EMAIL, and JIRA_API_TOKEN are set.'
+    );
+    throw new Error(
+      `JIRA credentials not configured. Cannot delete project ${projectIdOrKey}. This may leave orphaned resources.`
+    );
   }
-
-  const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64');
 
   const response = await fetch(`${JIRA_URL}/rest/api/3/project/${projectIdOrKey}`, {
     method: 'DELETE',
     headers: {
-      Authorization: `Basic ${auth}`,
+      Authorization: JIRA_AUTH_HEADER!,
       Accept: 'application/json',
     },
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to delete JIRA project ${projectIdOrKey}: ${error}`);
+    const errorText = await response.text();
+    let errorDetails = errorText;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorDetails = JSON.stringify(errorJson, null, 2);
+      console.error('[JIRA] Failed to delete project. Status:', response.status);
+      console.error('[JIRA] Error details:', errorJson);
+      if (errorJson.errorMessages) {
+        console.error('[JIRA] Error messages:', errorJson.errorMessages);
+      }
+      if (errorJson.errors) {
+        console.error('[JIRA] Field errors:', errorJson.errors);
+      }
+    } catch {
+      console.error('[JIRA] Failed to delete project:', errorText);
+    }
+    throw new Error(`Failed to delete JIRA project ${projectIdOrKey}: ${errorDetails}`);
   }
 }
 
@@ -253,8 +285,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Delete JIRA project if it exists
-        if (metadata.jiraProjectKey || metadata.jiraProjectId) {
-          const jiraRef = (metadata.jiraProjectKey || metadata.jiraProjectId)!;
+        const jiraRef = metadata.jiraProjectKey || metadata.jiraProjectId;
+        if (jiraRef) {
           try {
             console.log(`[Cleanup]   Deleting JIRA project: ${jiraRef}`);
             await deleteJiraProject(jiraRef);
