@@ -15,6 +15,11 @@ const BUGSPOTTER_API = process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugsp
 const BUGSPOTTER_ADMIN_EMAIL = process.env.BUGSPOTTER_ADMIN_EMAIL;
 const BUGSPOTTER_ADMIN_PASSWORD = process.env.BUGSPOTTER_ADMIN_PASSWORD;
 
+// JIRA Configuration
+const JIRA_URL = process.env.JIRA_URL || 'https://bugspotter-team-cbvd4hje.atlassian.net';
+const JIRA_EMAIL = process.env.JIRA_EMAIL;
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
+
 async function getBugSpotterAuthToken(): Promise<string> {
   if (!BUGSPOTTER_ADMIN_EMAIL || !BUGSPOTTER_ADMIN_PASSWORD) {
     throw new Error('BUGSPOTTER_ADMIN_EMAIL and BUGSPOTTER_ADMIN_PASSWORD not configured');
@@ -79,6 +84,28 @@ async function deleteApiKey(apiKeyId: string, authToken: string): Promise<void> 
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to delete API key ${apiKeyId}: ${error}`);
+  }
+}
+
+async function deleteJiraProject(projectIdOrKey: string): Promise<void> {
+  if (!JIRA_EMAIL || !JIRA_API_TOKEN) {
+    console.log('[JIRA] Credentials not configured, skipping JIRA deletion');
+    return;
+  }
+
+  const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64');
+
+  const response = await fetch(`${JIRA_URL}/rest/api/3/project/${projectIdOrKey}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to delete JIRA project ${projectIdOrKey}: ${error}`);
   }
 }
 
@@ -165,6 +192,8 @@ export async function POST(request: NextRequest) {
           email: string;
           projectIds: string[];
           apiKeyIds: string[];
+          jiraProjectKey?: string;
+          jiraProjectId?: string;
         }>(metadataKey);
 
         if (!metadata) {
@@ -221,6 +250,21 @@ export async function POST(request: NextRequest) {
             sessionId,
             error: `Failed to delete user ${metadata.userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
           });
+        }
+
+        // Delete JIRA project if it exists
+        if (metadata.jiraProjectKey || metadata.jiraProjectId) {
+          const jiraRef = (metadata.jiraProjectKey || metadata.jiraProjectId)!;
+          try {
+            console.log(`[Cleanup]   Deleting JIRA project: ${jiraRef}`);
+            await deleteJiraProject(jiraRef);
+          } catch (error) {
+            console.error(`[Cleanup]   Failed to delete JIRA project ${jiraRef}:`, error);
+            cleanupResults.errors.push({
+              sessionId,
+              error: `Failed to delete JIRA project ${jiraRef}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            });
+          }
         }
 
         // Remove from tracking

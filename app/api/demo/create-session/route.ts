@@ -17,6 +17,11 @@ const BUGSPOTTER_API = process.env.BUGSPOTTER_API_URL || 'https://demo.api.bugsp
 const BUGSPOTTER_ADMIN_EMAIL = process.env.BUGSPOTTER_ADMIN_EMAIL;
 const BUGSPOTTER_ADMIN_PASSWORD = process.env.BUGSPOTTER_ADMIN_PASSWORD;
 
+// JIRA Configuration
+const JIRA_URL = process.env.JIRA_URL || 'https://bugspotter-team-cbvd4hje.atlassian.net';
+const JIRA_EMAIL = process.env.JIRA_EMAIL;
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
+
 // Session duration: 2 hours + 1 minute
 const SESSION_DURATION_MS = (2 * 60 * 60 + 60) * 1000; // 2 hours 1 minute in milliseconds
 const SESSION_DURATION_SECONDS = 2 * 60 * 60 + 60; // 2 hours 1 minute in seconds
@@ -64,6 +69,9 @@ interface DemoSessionData {
   userPassword: string;
   magicLink?: string;
   projects: BugSpotterProject[];
+  jiraProjectKey?: string;
+  jiraProjectId?: string;
+  jiraProjectUrl?: string;
   createdAt: number;
   expiresAt: number;
 }
@@ -159,6 +167,79 @@ async function createBugSpotterProjects(
   }
 
   return projects;
+}
+
+/**
+ * Create a JIRA project for the demo session
+ */
+async function createJiraProject(
+  company: string,
+  sessionId: string
+): Promise<{ projectKey: string; projectId: string; projectUrl: string } | null> {
+  if (!JIRA_EMAIL || !JIRA_API_TOKEN) {
+    console.log('[JIRA] Credentials not configured, skipping JIRA project creation');
+    return null;
+  }
+
+  try {
+    // Generate unique project key (max 10 chars, uppercase, starts with letter)
+    const baseKey = company
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase()
+      .substring(0, 6);
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const projectKey = `${baseKey || 'DEMO'}${randomSuffix}`;
+
+    const projectName = `${company} - Demo Session ${sessionId}`;
+
+    console.log('[JIRA] Creating project:', projectName);
+    console.log('[JIRA] Project key:', projectKey);
+
+    // Create project via JIRA API
+    const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64');
+
+    const response = await fetch(`${JIRA_URL}/rest/api/3/project`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        key: projectKey,
+        name: projectName,
+        projectTypeKey: 'software',
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+        description: `Demo session for ${company}. Auto-expires after 2 hours.`,
+        leadAccountId: undefined, // Will use default (API token owner)
+        assigneeType: 'PROJECT_LEAD',
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[JIRA] Failed to create project:', error);
+      throw new Error(`Failed to create JIRA project: ${error}`);
+    }
+
+    const projectData = await response.json();
+    const projectId = projectData.id;
+    const projectUrl = `${JIRA_URL}/jira/software/projects/${projectKey}/board`;
+
+    console.log('[JIRA] ✅ Project created successfully');
+    console.log('[JIRA] Project ID:', projectId);
+    console.log('[JIRA] Project URL:', projectUrl);
+
+    return {
+      projectKey,
+      projectId,
+      projectUrl,
+    };
+  } catch (error) {
+    console.error('[JIRA] ❌ Error creating project:', error);
+    // Don't fail the entire session creation if JIRA fails
+    return null;
+  }
 }
 
 async function createBugSpotterUser(
@@ -355,6 +436,21 @@ async function sendDemoCredentialsEmail(
         <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">Access your demo applications from the dashboard:</p>
         <a href="${dashboardUrl}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Open Demo Dashboard →</a>
       </div>
+
+      ${
+        sessionData.jiraProjectUrl
+          ? `
+      <!-- JIRA Integration -->
+      <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
+        <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">📊 JIRA Integration</h2>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">View bug tickets created in JIRA:</p>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;"><strong>Project:</strong> ${sessionData.jiraProjectKey}</p>
+        <a href="${sessionData.jiraProjectUrl}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Open JIRA Board →</a>
+        <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">Bugs triggered in the demo will automatically create tickets in this JIRA project.</p>
+      </div>
+      `
+          : ''
+      }
 
       ${
         sessionData.projects.length > 0
@@ -627,6 +723,15 @@ export async function POST(request: NextRequest) {
         projects.map((p) => p.name).join(', ')
       );
 
+      // Create JIRA project
+      console.log('[Session] Creating JIRA project...');
+      const jiraProject = await createJiraProject(company, sessionId);
+      if (jiraProject) {
+        console.log('[Session] ✅ JIRA project created:', jiraProject.projectKey);
+      } else {
+        console.log('[Session] ⚠️  JIRA project creation skipped or failed');
+      }
+
       // Store complete session data
       const sessionData: DemoSessionData = {
         subdomain: sessionId,
@@ -636,6 +741,9 @@ export async function POST(request: NextRequest) {
         userPassword: password,
         magicLink: magicLink || undefined,
         projects,
+        jiraProjectKey: jiraProject?.projectKey,
+        jiraProjectId: jiraProject?.projectId,
+        jiraProjectUrl: jiraProject?.projectUrl,
         createdAt: localSession.createdAt,
         expiresAt: localSession.expiresAt,
       };
@@ -657,6 +765,8 @@ export async function POST(request: NextRequest) {
         email,
         projectIds: projects.map((p) => p.id),
         apiKeyIds: projects.map((p) => p.apiKeyId),
+        jiraProjectKey: jiraProject?.projectKey,
+        jiraProjectId: jiraProject?.projectId,
       };
       await redis.setex(
         `bugspotter-metadata:${sessionId}`,
