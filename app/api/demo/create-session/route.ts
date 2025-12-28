@@ -255,14 +255,23 @@ async function sendDemoCredentialsEmail(
 
   console.log('[Email] Resend API key configured:', !!resendApiKey);
   console.log('[Email] Resend API key length:', resendApiKey?.length || 0);
+  console.log(
+    '[Email] Resend API key format valid:',
+    resendApiKey ? resendApiKey.startsWith('re_') : false
+  );
   console.log('[Email] From email:', fromEmail);
 
   if (!resendApiKey || resendApiKey === 'your_resend_api_key_here') {
     console.log('[Email] ❌ Resend API key not configured, skipping email send');
+    console.log(
+      '[Email] This is expected in local development, but should NOT happen in production'
+    );
+    console.log('[Email] To fix: Set RESEND_API_KEY in Vercel environment variables');
     return;
   }
 
   console.log('[Email] ✅ Resend configuration valid, proceeding with email send');
+  console.log('[Email] Email will be sent to:', email);
 
   try {
     console.log('[Email] Initializing Resend client...');
@@ -417,6 +426,8 @@ async function sendDemoCredentialsEmail(
     console.log('[Email] From:', fromEmail);
     console.log('[Email] To:', email);
     console.log('[Email] Subject: 🎉 Your BugSpotter Demo Credentials -', company);
+    console.log('[Email] HTML content length:', htmlContent.length, 'characters');
+    console.log('[Email] Calling Resend API...');
 
     const result = await resend.emails.send({
       from: fromEmail,
@@ -435,8 +446,27 @@ async function sendDemoCredentialsEmail(
       error instanceof Error ? error.constructor.name : typeof error
     );
     console.error('[Email] Error message:', error instanceof Error ? error.message : String(error));
-    console.error('[Email] Full error:', error);
+    console.error('[Email] Error stack:', error instanceof Error ? error.stack : 'N/A');
+
+    // Log additional error details if available
+    if (error && typeof error === 'object') {
+      console.error('[Email] Error details:', JSON.stringify(error, null, 2));
+    }
+
+    console.error('[Email] Resend configuration at time of error:');
+    console.error('  - API Key present:', !!resendApiKey);
+    console.error('  - From email:', fromEmail);
+    console.error('  - Recipient:', email);
+
+    console.error('[Email] Possible causes:');
+    console.error('  1. Domain not verified in Resend (check https://resend.com/domains)');
+    console.error('  2. Invalid API key or key revoked');
+    console.error('  3. Resend account suspended or rate limited');
+    console.error('  4. Network connectivity issue');
+    console.error('  5. Invalid email format');
+
     // Don't throw - we don't want to fail session creation if email fails
+    // The session was created successfully, just email delivery failed
   }
 }
 
@@ -472,7 +502,34 @@ export async function POST(request: NextRequest) {
   console.log('\n========================================');
   console.log('[Session] POST /api/demo/create-session started');
   console.log('========================================');
-
+  // Log environment configuration status
+  console.log('[Session] Environment Configuration:');
+  console.log(
+    '  UPSTASH_REDIS_REST_URL:',
+    process.env.UPSTASH_REDIS_REST_URL ? '✅ Set' : '❌ Missing'
+  );
+  console.log(
+    '  UPSTASH_REDIS_REST_TOKEN:',
+    process.env.UPSTASH_REDIS_REST_TOKEN ? '✅ Set' : '❌ Missing'
+  );
+  console.log('  BUGSPOTTER_API_URL:', process.env.BUGSPOTTER_API_URL || 'default');
+  console.log(
+    '  BUGSPOTTER_ADMIN_EMAIL:',
+    process.env.BUGSPOTTER_ADMIN_EMAIL ? '✅ Set' : '❌ Missing'
+  );
+  console.log(
+    '  BUGSPOTTER_ADMIN_PASSWORD:',
+    process.env.BUGSPOTTER_ADMIN_PASSWORD ? '✅ Set' : '❌ Missing'
+  );
+  console.log('  BUGSPOTTER_ADMIN_URL:', process.env.BUGSPOTTER_ADMIN_URL || 'not set');
+  console.log('  NEXT_PUBLIC_BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL || 'default');
+  console.log(
+    '  RESEND_API_KEY:',
+    process.env.RESEND_API_KEY
+      ? `✅ Set (${process.env.RESEND_API_KEY.substring(0, 10)}...)`
+      : '❌ Missing'
+  );
+  console.log('  RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL || 'default');
   try {
     const body = await request.json();
     const { company, email } = body;
@@ -508,10 +565,14 @@ export async function POST(request: NextRequest) {
 
     try {
       console.log('[Session] Starting BugSpotter integration...');
+      console.log('[Session] BugSpotter API URL:', BUGSPOTTER_API);
+      console.log('[Session] BugSpotter Admin Email:', BUGSPOTTER_ADMIN_EMAIL);
+
       // Authenticate with BugSpotter API (admin)
       console.log('[Session] Authenticating with BugSpotter API...');
       const adminAuthToken = await getBugSpotterAuthToken();
       console.log('[Session] ✅ BugSpotter admin authentication successful');
+      console.log('[Session] Admin token received (length:', adminAuthToken.length, ')');
 
       // Create user first (so they can own the projects)
       console.log('[Session] Creating BugSpotter user...');
@@ -606,9 +667,23 @@ export async function POST(request: NextRequest) {
       console.log('[Session] ✅ Session data stored in Redis with cleanup tracking');
 
       // Send credentials via email
-      console.log('[Session] Sending credentials email...');
-      await sendDemoCredentialsEmail(email, company, sessionData);
-      console.log('[Session] ✅ Email sending completed');
+      console.log('[Session] 📧 Attempting to send credentials email...');
+      console.log('[Session] Email recipient:', email);
+      console.log('[Session] Company:', company);
+      console.log('[Session] Session has', sessionData.projects.length, 'projects');
+      console.log('[Session] Magic link present:', !!sessionData.magicLink);
+
+      try {
+        await sendDemoCredentialsEmail(email, company, sessionData);
+        console.log('[Session] ✅ Email sending completed successfully');
+      } catch (emailError) {
+        console.error('[Session] ⚠️  Email sending failed, but continuing with session creation');
+        console.error(
+          '[Session] Email error:',
+          emailError instanceof Error ? emailError.message : String(emailError)
+        );
+        // Don't throw - session was created successfully even if email failed
+      }
 
       console.log('[Session] ✅ Session creation SUCCESS');
       console.log('========================================\n');
@@ -630,8 +705,23 @@ export async function POST(request: NextRequest) {
     } catch (bugspotterError) {
       // If BugSpotter integration fails, DO NOT send email
       console.error('[Session] ❌ BugSpotter integration failed');
-      console.error('[Session] Error:', bugspotterError);
-      console.log('[Session] NOT sending email due to BugSpotter failure');
+      console.error(
+        '[Session] Error type:',
+        bugspotterError instanceof Error ? bugspotterError.constructor.name : typeof bugspotterError
+      );
+      console.error(
+        '[Session] Error message:',
+        bugspotterError instanceof Error ? bugspotterError.message : String(bugspotterError)
+      );
+      console.error('[Session] Full error:', bugspotterError);
+      console.error(
+        '[Session] Stack trace:',
+        bugspotterError instanceof Error ? bugspotterError.stack : 'N/A'
+      );
+      console.log('[Session] ⚠️  NOT sending email due to BugSpotter failure');
+      console.log(
+        '[Session] Reason: Email should only be sent when session is fully created with working credentials'
+      );
 
       console.log('[Session] ⚠️  Session creation FAILED');
       console.log('========================================\n');
@@ -640,6 +730,8 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'BugSpotter integration failed',
           details: bugspotterError instanceof Error ? bugspotterError.message : 'Unknown error',
+          step: 'BugSpotter integration',
+          hint: 'Check BUGSPOTTER_API_URL, BUGSPOTTER_ADMIN_EMAIL, and BUGSPOTTER_ADMIN_PASSWORD environment variables',
         },
         { status: 500 }
       );
