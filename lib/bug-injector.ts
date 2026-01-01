@@ -6,6 +6,7 @@
  */
 
 import type { BugSpotterSDK } from '@/types/bug';
+import { toast } from 'sonner';
 
 export type BugType =
   | 'timeout'
@@ -101,6 +102,9 @@ export class BugInjector {
 
     // Visual feedback
     this.showVisualFeedback(config);
+
+    // Show toast notification with appropriate styling based on severity
+    this.showToastNotification(config);
 
     // Use BugSpotter SDK's built-in capture modal
     if (this.bugspotterSDK) {
@@ -201,6 +205,58 @@ export class BugInjector {
         element.style.transition = originalTransition;
       }, 300);
     }, 1000);
+  }
+
+  /**
+   * Shows a toast notification when a bug is triggered
+   */
+  private showToastNotification(config: BugConfig): void {
+    const severityIcons = {
+      low: '⚠️',
+      medium: '🔶',
+      high: '❌',
+      critical: '🚨',
+    };
+
+    const severityLabels = {
+      low: 'Warning',
+      medium: 'Error',
+      high: 'Critical Error',
+      critical: 'Critical Failure',
+    };
+
+    const icon = severityIcons[config.severity];
+    const label = severityLabels[config.severity];
+
+    // Use appropriate toast type based on severity
+    if (config.severity === 'critical' || config.severity === 'high') {
+      toast.error(`${icon} ${label}: ${config.type}`, {
+        description: config.message,
+        duration: 6000,
+        action: this.bugspotterSDK ? {
+          label: 'Report Bug',
+          onClick: () => {
+            this.bugspotterSDK?.capture();
+          }
+        } : undefined,
+      });
+    } else if (config.severity === 'medium') {
+      toast.warning(`${icon} ${label}: ${config.type}`, {
+        description: config.message,
+        duration: 5000,
+        action: this.bugspotterSDK ? {
+          label: 'Report',
+          onClick: () => {
+            this.bugspotterSDK?.capture();
+          }
+        } : undefined,
+      });
+    } else {
+      toast(`${icon} ${label}: ${config.type}`, {
+        description: config.message,
+        duration: 4000,
+      });
+    }
   }
 
   /**

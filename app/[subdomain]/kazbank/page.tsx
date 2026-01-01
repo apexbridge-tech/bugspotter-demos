@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { BugInjector } from '@/lib/bug-injector';
 import { initializeBugSpotter, fetchDemoApiKey } from '@/lib/sdk-config';
 import { BugSpotterSDK } from '@/types/bug';
+import { Toaster } from 'sonner';
 
 type Language = 'en' | 'kk' | 'ru';
 
@@ -254,9 +255,11 @@ export default function KazBankDemo() {
   }, [sessionId]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-md border-b-4 border-green-600">
+    <>
+      <Toaster position="top-right" expand={true} richColors closeButton />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-md border-b-4 border-green-600">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -560,6 +563,7 @@ export default function KazBankDemo() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
