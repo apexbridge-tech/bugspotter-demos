@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { BugInjector } from '@/lib/bug-injector';
 import { initializeBugSpotter, fetchDemoApiKey } from '@/lib/sdk-config';
 import { BugSpotterSDK } from '@/types/bug';
+import { Toaster } from 'sonner';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,9 +130,11 @@ export default function QuickMartDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg">
+    <>
+      <Toaster position="top-right" expand={true} richColors closeButton />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -411,6 +414,7 @@ export default function QuickMartDemo() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

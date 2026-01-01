@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { BugInjector } from '@/lib/bug-injector';
 import { initializeBugSpotter, fetchDemoApiKey } from '@/lib/sdk-config';
 import { BugSpotterSDK } from '@/types/bug';
+import { Toaster } from 'sonner';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,9 +138,11 @@ export default function TalentFlowDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white">
-      {/* Header */}
-      <header className="bg-white border-b border-purple-100 shadow-sm">
+    <>
+      <Toaster position="top-right" expand={true} richColors closeButton />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white">
+        {/* Header */}
+        <header className="bg-white border-b border-purple-100 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -416,6 +419,7 @@ export default function TalentFlowDemo() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
