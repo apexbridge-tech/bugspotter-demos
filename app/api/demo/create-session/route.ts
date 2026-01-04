@@ -26,9 +26,11 @@ const JIRA_AUTH_HEADER =
     ? `Basic ${Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64')}`
     : undefined;
 
-// Session duration: 2 hours + 1 minute
-const SESSION_DURATION_MS = (2 * 60 * 60 + 60) * 1000; // 2 hours 1 minute in milliseconds
-const SESSION_DURATION_SECONDS = 2 * 60 * 60 + 60; // 2 hours 1 minute in seconds
+// Session duration from environment (default: 2 hours)
+const DEFAULT_SESSION_TTL = 7200; // 2 hours in seconds
+const parsedTTL = parseInt(process.env.SESSION_TTL || '', 10);
+const SESSION_TTL_SECONDS = !isNaN(parsedTTL) && parsedTTL > 0 ? parsedTTL : DEFAULT_SESSION_TTL;
+const SESSION_DURATION_MS = SESSION_TTL_SECONDS * 1000;
 
 interface BugSpotterProject {
   id: string;
@@ -196,6 +198,32 @@ async function createJiraProject(
     return null;
   }
 
+  // Get the account ID of the authenticated user (API token owner)
+  console.log('[JIRA] Fetching authenticated user account ID...');
+  const userResponse = await fetch(`${JIRA_URL}/rest/api/3/myself`, {
+    method: 'GET',
+    headers: {
+      Authorization: JIRA_AUTH_HEADER!,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!userResponse.ok) {
+    const errorText = await userResponse.text();
+    console.error('[JIRA] Failed to fetch user account ID:', errorText);
+    throw new Error(`Failed to fetch JIRA user account: ${errorText}`);
+  }
+
+  const userData = await userResponse.json();
+  const leadAccountId = userData.accountId;
+
+  if (!leadAccountId) {
+    console.error('[JIRA] Account ID not found in user data:', userData);
+    throw new Error('Failed to retrieve JIRA account ID from authenticated user');
+  }
+
+  console.log('[JIRA] Using account ID as project lead:', leadAccountId);
+
   // Generate unique project key (max 10 chars, uppercase, starts with letter)
   const baseKey = company
     .replace(/[^a-zA-Z0-9]/g, '')
@@ -222,8 +250,8 @@ async function createJiraProject(
       name: projectName,
       projectTypeKey: 'software',
       projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
-      description: `Demo session for ${company}. Auto-expires after 2 hours.`,
-      leadAccountId: undefined, // Will use default (API token owner)
+      description: `Demo session for ${company}. Auto-expires after ${Math.round(SESSION_TTL_SECONDS / 3600)} hour${SESSION_TTL_SECONDS >= 7200 ? 's' : ''}.`,
+      leadAccountId: leadAccountId,
       assigneeType: 'PROJECT_LEAD',
     }),
   });
@@ -809,7 +837,7 @@ export async function POST(request: NextRequest) {
       const redis = getRedis();
       await redis.setex(
         `demo-session:${sessionId}`,
-        SESSION_DURATION_SECONDS,
+        SESSION_TTL_SECONDS,
         JSON.stringify(sessionData)
       );
 
@@ -827,7 +855,7 @@ export async function POST(request: NextRequest) {
       };
       await redis.setex(
         `bugspotter-metadata:${sessionId}`,
-        SESSION_DURATION_SECONDS + 3 * 60 * 60, // +3 hours grace period
+        SESSION_TTL_SECONDS + 3 * 60 * 60, // +3 hours grace period
         JSON.stringify(metadata)
       );
 
