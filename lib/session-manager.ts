@@ -34,7 +34,7 @@ export interface BugEvent {
   screenshot?: string;
 }
 
-const SESSION_TTL = 2 * 60 * 60; // 2 hours in seconds
+const SESSION_TTL = parseInt(process.env.SESSION_TTL || '7200', 10); // Default: 2 hours in seconds
 
 /**
  * Creates a new demo session with a unique subdomain

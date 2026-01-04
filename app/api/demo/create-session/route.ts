@@ -26,9 +26,10 @@ const JIRA_AUTH_HEADER =
     ? `Basic ${Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64')}`
     : undefined;
 
-// Session duration: 2 hours + 1 minute
-const SESSION_DURATION_MS = (2 * 60 * 60 + 60) * 1000; // 2 hours 1 minute in milliseconds
-const SESSION_DURATION_SECONDS = 2 * 60 * 60 + 60; // 2 hours 1 minute in seconds
+// Session duration from environment (default: 2 hours)
+const SESSION_TTL_SECONDS = parseInt(process.env.SESSION_TTL || '7200', 10); // Default: 2 hours
+const SESSION_DURATION_MS = SESSION_TTL_SECONDS * 1000;
+const SESSION_DURATION_SECONDS = SESSION_TTL_SECONDS;
 
 interface BugSpotterProject {
   id: string;
@@ -196,6 +197,26 @@ async function createJiraProject(
     return null;
   }
 
+  // Get the account ID of the authenticated user (API token owner)
+  console.log('[JIRA] Fetching authenticated user account ID...');
+  const userResponse = await fetch(`${JIRA_URL}/rest/api/3/myself`, {
+    method: 'GET',
+    headers: {
+      Authorization: JIRA_AUTH_HEADER!,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!userResponse.ok) {
+    const errorText = await userResponse.text();
+    console.error('[JIRA] Failed to fetch user account ID:', errorText);
+    throw new Error(`Failed to fetch JIRA user account: ${errorText}`);
+  }
+
+  const userData = await userResponse.json();
+  const leadAccountId = userData.accountId;
+  console.log('[JIRA] Using account ID as project lead:', leadAccountId);
+
   // Generate unique project key (max 10 chars, uppercase, starts with letter)
   const baseKey = company
     .replace(/[^a-zA-Z0-9]/g, '')
@@ -223,7 +244,7 @@ async function createJiraProject(
       projectTypeKey: 'software',
       projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
       description: `Demo session for ${company}. Auto-expires after 2 hours.`,
-      leadAccountId: undefined, // Will use default (API token owner)
+      leadAccountId: leadAccountId,
       assigneeType: 'PROJECT_LEAD',
     }),
   });
