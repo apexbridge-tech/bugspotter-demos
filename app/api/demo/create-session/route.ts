@@ -27,9 +27,10 @@ const JIRA_AUTH_HEADER =
     : undefined;
 
 // Session duration from environment (default: 2 hours)
-const SESSION_TTL_SECONDS = parseInt(process.env.SESSION_TTL || '7200', 10); // Default: 2 hours
+const DEFAULT_SESSION_TTL = 7200; // 2 hours in seconds
+const parsedTTL = parseInt(process.env.SESSION_TTL || '', 10);
+const SESSION_TTL_SECONDS = !isNaN(parsedTTL) && parsedTTL > 0 ? parsedTTL : DEFAULT_SESSION_TTL;
 const SESSION_DURATION_MS = SESSION_TTL_SECONDS * 1000;
-const SESSION_DURATION_SECONDS = SESSION_TTL_SECONDS;
 
 interface BugSpotterProject {
   id: string;
@@ -215,6 +216,12 @@ async function createJiraProject(
 
   const userData = await userResponse.json();
   const leadAccountId = userData.accountId;
+
+  if (!leadAccountId) {
+    console.error('[JIRA] Account ID not found in user data:', userData);
+    throw new Error('Failed to retrieve JIRA account ID from authenticated user');
+  }
+
   console.log('[JIRA] Using account ID as project lead:', leadAccountId);
 
   // Generate unique project key (max 10 chars, uppercase, starts with letter)
@@ -243,7 +250,7 @@ async function createJiraProject(
       name: projectName,
       projectTypeKey: 'software',
       projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
-      description: `Demo session for ${company}. Auto-expires after 2 hours.`,
+      description: `Demo session for ${company}. Auto-expires after ${Math.round(SESSION_TTL_SECONDS / 3600)} hour${SESSION_TTL_SECONDS >= 7200 ? 's' : ''}.`,
       leadAccountId: leadAccountId,
       assigneeType: 'PROJECT_LEAD',
     }),
@@ -830,7 +837,7 @@ export async function POST(request: NextRequest) {
       const redis = getRedis();
       await redis.setex(
         `demo-session:${sessionId}`,
-        SESSION_DURATION_SECONDS,
+        SESSION_TTL_SECONDS,
         JSON.stringify(sessionData)
       );
 
@@ -848,7 +855,7 @@ export async function POST(request: NextRequest) {
       };
       await redis.setex(
         `bugspotter-metadata:${sessionId}`,
-        SESSION_DURATION_SECONDS + 3 * 60 * 60, // +3 hours grace period
+        SESSION_TTL_SECONDS + 3 * 60 * 60, // +3 hours grace period
         JSON.stringify(metadata)
       );
 
