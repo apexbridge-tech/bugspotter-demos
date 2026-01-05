@@ -88,16 +88,28 @@ export async function GET(request: NextRequest) {
     // Check for session token
     const sessionToken = request.headers.get('x-session-token');
     console.log('[Sessions API] Session token received:', !!sessionToken);
+    console.log('[Sessions API] Session token value:', sessionToken);
     if (!sessionToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify session
     const redis = getRedis();
-    const email = await redis.get(`admin-session:${sessionToken}`);
+    const redisKey = `admin-session:${sessionToken}`;
+    console.log('[Sessions API] Looking up Redis key:', redisKey);
+    const email = await redis.get(redisKey);
     console.log('[Sessions API] Email from Redis:', email);
+    console.log('[Sessions API] Email type:', typeof email);
     if (!email) {
       console.log('[Sessions API] Session not found in Redis');
+      // Debug: Try to list all admin-session keys
+      try {
+        const allAdminKeys = await redis.keys('admin-session:*');
+        console.log('[Sessions API] All admin-session keys in Redis:', allAdminKeys);
+        console.log('[Sessions API] Number of admin sessions:', allAdminKeys?.length || 0);
+      } catch (debugError) {
+        console.log('[Sessions API] Could not list admin keys:', debugError);
+      }
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
