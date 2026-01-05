@@ -590,7 +590,7 @@ async function sendDemoCredentialsEmail(
             dateStyle: 'full',
             timeStyle: 'short',
           })}<br>
-          <em style="font-size: 13px;">This demo session will automatically expire after 2 hours.</em>
+          <em style="font-size: 13px;">This demo session will automatically expire after ${SESSION_TTL_SECONDS >= 86400 ? Math.floor(SESSION_TTL_SECONDS / 86400) + ' day' + (Math.floor(SESSION_TTL_SECONDS / 86400) > 1 ? 's' : '') : SESSION_TTL_SECONDS >= 3600 ? Math.floor(SESSION_TTL_SECONDS / 3600) + ' hour' + (Math.floor(SESSION_TTL_SECONDS / 3600) > 1 ? 's' : '') : Math.floor(SESSION_TTL_SECONDS / 60) + ' minutes'}.</em>
         </p>
       </div>
 
