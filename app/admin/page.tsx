@@ -409,6 +409,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-session-token': sessionToken || '',
         },
         body: JSON.stringify({ company: newSessionCompany, email: newSessionEmail }),
       });

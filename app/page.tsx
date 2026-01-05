@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,6 +15,10 @@ export default function Home() {
     magicLink?: string;
     email: string;
   } | null>(null);
+
+  useEffect(() => {
+    router.push('/admin');
+  }, [router]);
 
   const handleCreateDemo = async (e: React.FormEvent) => {
     e.preventDefault();
