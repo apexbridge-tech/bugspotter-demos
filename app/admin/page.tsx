@@ -409,6 +409,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-session-token': sessionToken || '',
         },
         body: JSON.stringify({ company: newSessionCompany, email: newSessionEmail }),
       });
@@ -443,8 +444,8 @@ export default function AdminPage() {
     if (token) {
       // Authenticate with magic link token
       fetch(`/api/auth/magic-link?token=${token}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success) {
             setSessionToken(data.sessionToken);
             localStorage.setItem('admin-session', data.sessionToken);

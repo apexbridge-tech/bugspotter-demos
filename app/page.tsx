@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,6 +15,10 @@ export default function Home() {
     magicLink?: string;
     email: string;
   } | null>(null);
+
+  useEffect(() => {
+    router.push('/admin');
+  }, [router]);
 
   const handleCreateDemo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,9 +84,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">✅</span>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Demo Session Created!
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Demo Session Created!</h2>
                 <p className="text-gray-600">
                   We've sent all the details to <strong>{sessionData.email}</strong>
                 </p>
@@ -93,7 +97,8 @@ export default function Home() {
                     Instant Access to BugSpotter Admin
                   </h3>
                   <p className="text-gray-700 text-sm mb-4">
-                    Click the button below to securely login to BugSpotter Admin (no password required):
+                    Click the button below to securely login to BugSpotter Admin (no password
+                    required):
                   </p>
                   <a
                     href={sessionData.magicLink}
@@ -110,7 +115,8 @@ export default function Home() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-blue-900 mb-2">📧 Check Your Email</h3>
                 <p className="text-blue-800 text-sm">
-                  We've sent a detailed email with all demo links, credentials, and instructions to get started.
+                  We've sent a detailed email with all demo links, credentials, and instructions to
+                  get started.
                 </p>
               </div>
 
@@ -137,70 +143,70 @@ export default function Home() {
           </div>
         ) : (
           /* Demo Creation Form */
-        <div className="max-w-md mx-auto mb-16">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              Create Your Demo Session
-            </h2>
-            <form onSubmit={handleCreateDemo} className="space-y-4">
-              <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Name
-                </label>
-                <input
-                  id="company"
-                  type="text"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Enter your company name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  required
-                  minLength={2}
-                  maxLength={50}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  We'll send your BugSpotter credentials to this email
-                </p>
-              </div>
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm">{error}</p>
+          <div className="max-w-md mx-auto mb-16">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                Create Your Demo Session
+              </h2>
+              <form onSubmit={handleCreateDemo} className="space-y-4">
+                <div>
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name
+                  </label>
+                  <input
+                    id="company"
+                    type="text"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    placeholder="Enter your company name"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    required
+                    minLength={2}
+                    maxLength={50}
+                  />
                 </div>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating Demo...
-                  </span>
-                ) : (
-                  'Start Interactive Demo'
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    We'll send your BugSpotter credentials to this email
+                  </p>
+                </div>
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
                 )}
-              </button>
-            </form>
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Your demo session will expire after 2 hours
-            </p>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Creating Demo...
+                    </span>
+                  ) : (
+                    'Start Interactive Demo'
+                  )}
+                </button>
+              </form>
+              <p className="text-xs text-gray-500 text-center mt-4">
+                Your demo session will expire after 2 hours
+              </p>
+            </div>
           </div>
-        </div>
         )}
 
         {/* Demo Previews */}

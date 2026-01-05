@@ -233,23 +233,27 @@ export class BugInjector {
       toast.error(`${icon} ${label}: ${config.type}`, {
         description: config.message,
         duration: 6000,
-        action: this.bugspotterSDK ? {
-          label: 'Report Bug',
-          onClick: () => {
-            this.bugspotterSDK?.capture();
-          }
-        } : undefined,
+        action: this.bugspotterSDK
+          ? {
+              label: 'Report Bug',
+              onClick: () => {
+                this.bugspotterSDK?.capture();
+              },
+            }
+          : undefined,
       });
     } else if (config.severity === 'medium') {
       toast.warning(`${icon} ${label}: ${config.type}`, {
         description: config.message,
         duration: 5000,
-        action: this.bugspotterSDK ? {
-          label: 'Report',
-          onClick: () => {
-            this.bugspotterSDK?.capture();
-          }
-        } : undefined,
+        action: this.bugspotterSDK
+          ? {
+              label: 'Report',
+              onClick: () => {
+                this.bugspotterSDK?.capture();
+              },
+            }
+          : undefined,
       });
     } else {
       toast(`${icon} ${label}: ${config.type}`, {

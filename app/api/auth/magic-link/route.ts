@@ -34,15 +34,12 @@ function getJWTSecret() {
 export async function POST(request: NextRequest) {
   try {
     const jwtSecret = getJWTSecret();
-    
+
     const body = await request.json();
     const { userId, userEmail, role } = body;
 
     if (!userId || !userEmail) {
-      return NextResponse.json(
-        { error: 'userId and userEmail are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'userId and userEmail are required' }, { status: 400 });
     }
 
     // Generate JWT magic token with type: 'magic'
@@ -88,15 +85,12 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const bugspotterApi = getBugSpotterConfig();
-    
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Token is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Token is required' }, { status: 400 });
     }
 
     // Authenticate with BugSpotter API using magic login

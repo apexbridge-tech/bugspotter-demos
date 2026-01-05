@@ -283,6 +283,7 @@ async function createJiraProject(
   console.log('[JIRA] ✅ Project created successfully');
   console.log('[JIRA] Project ID:', projectId);
   console.log('[JIRA] Project URL:', projectUrl);
+  console.log('[JIRA] Note: Demo users can access JIRA using credentials provided in the email');
 
   return {
     projectKey,
@@ -509,9 +510,10 @@ async function sendDemoCredentialsEmail(
       </div>
 
       ${
-        sessionData.jiraProjectUrl
+        sessionData.jiraProjectUrl &&
+        (email === JIRA_EMAIL || email === BUGSPOTTER_ADMIN_EMAIL)
           ? `
-      <!-- JIRA Integration -->
+      <!-- JIRA Integration (Admin Access) -->
       <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
         <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">📊 JIRA Integration</h2>
         <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">View bug tickets created in JIRA:</p>
@@ -520,7 +522,32 @@ async function sendDemoCredentialsEmail(
         <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">Bugs triggered in the demo will automatically create tickets in this JIRA project.</p>
       </div>
       `
-          : ''
+          : sessionData.jiraProjectUrl && JIRA_EMAIL && JIRA_URL
+            ? `
+      <!-- JIRA Integration (Demo User) -->
+      <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
+        <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">📊 JIRA Integration Enabled</h2>
+        <p style="margin: 0 0 15px; color: #6b7280; font-size: 14px;">This demo is integrated with JIRA. Bug reports will automatically create tickets in project: <strong>${safeJiraProjectKey}</strong></p>
+        <div style="background-color: #f9fafb; border-radius: 4px; padding: 15px; margin: 15px 0;">
+          <p style="margin: 0 0 10px; color: #4b5563; font-size: 14px; font-weight: 600;">To view JIRA tickets:</p>
+          <p style="margin: 0 0 5px; color: #6b7280; font-size: 13px;"><strong>JIRA URL:</strong> <a href="${JIRA_URL}" style="color: #3b82f6; text-decoration: none;">${JIRA_URL}</a></p>
+          <p style="margin: 0 0 5px; color: #6b7280; font-size: 13px;"><strong>Email:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px;">${escapeHtml(JIRA_EMAIL)}</code></p>
+          <p style="margin: 0 0 10px; color: #6b7280; font-size: 13px;"><strong>Password:</strong> <em style="color: #9ca3af; font-size: 12px;">(Use the demo admin credentials provided by your administrator)</em></p>
+          <a href="${sessionData.jiraProjectUrl}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 500;">Open JIRA Board →</a>
+        </div>
+        <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">Note: JIRA access requires credentials. If you don't have access, contact your administrator or simply use the BugSpotter Admin interface to view bug reports.</p>
+      </div>
+      `
+            : sessionData.jiraProjectUrl
+              ? `
+      <!-- JIRA Integration Info -->
+      <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
+        <h2 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">📊 JIRA Integration Enabled</h2>
+        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">This demo is integrated with JIRA. Bug reports will automatically create tickets in project: <strong>${safeJiraProjectKey}</strong></p>
+        <p style="margin: 10px 0 0; color: #9ca3af; font-size: 12px;">Note: JIRA access is managed by your administrator. Contact them if you need access to view tickets, or use the BugSpotter Admin interface instead.</p>
+      </div>
+      `
+              : ''
       }
 
       ${
@@ -701,6 +728,24 @@ export async function POST(request: NextRequest) {
   console.log('  JIRA_EMAIL:', process.env.JIRA_EMAIL ? '✅ Set' : '❌ Missing');
   console.log('  JIRA_API_TOKEN:', process.env.JIRA_API_TOKEN ? '✅ Set' : '❌ Missing');
   try {
+    // Check for admin session token
+    const sessionToken = request.headers.get('x-session-token');
+    console.log('[Session] Admin session token received:', !!sessionToken);
+    if (!sessionToken) {
+      console.log('[Session] ❌ No session token provided');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify admin session
+    const redis = getRedis();
+    const adminEmail = await redis.get(`admin-session:${sessionToken}`);
+    console.log('[Session] Admin email from Redis:', adminEmail);
+    if (!adminEmail) {
+      console.log('[Session] ❌ Invalid or expired session token');
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+    console.log('[Session] ✅ Admin authenticated:', adminEmail);
+
     const body = await request.json();
     const { company, email } = body;
 
