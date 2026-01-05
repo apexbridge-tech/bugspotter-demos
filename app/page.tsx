@@ -16,6 +16,14 @@ export default function Home() {
     email: string;
   } | null>(null);
 
+  // Calculate session duration from environment variable (default: 2 hours)
+  const sessionTtlSeconds = parseInt(process.env.NEXT_PUBLIC_SESSION_TTL || '7200', 10);
+  const sessionDuration = sessionTtlSeconds >= 86400 
+    ? `${Math.floor(sessionTtlSeconds / 86400)} day${Math.floor(sessionTtlSeconds / 86400) > 1 ? 's' : ''}`
+    : sessionTtlSeconds >= 3600 
+    ? `${Math.floor(sessionTtlSeconds / 3600)} hour${Math.floor(sessionTtlSeconds / 3600) > 1 ? 's' : ''}`
+    : `${Math.floor(sessionTtlSeconds / 60)} minutes`;
+
   useEffect(() => {
     router.push('/admin');
   }, [router]);
@@ -203,7 +211,7 @@ export default function Home() {
                 </button>
               </form>
               <p className="text-xs text-gray-500 text-center mt-4">
-                Your demo session will expire after 24 hours
+                Your demo session will expire after {sessionDuration}
               </p>
             </div>
           </div>
