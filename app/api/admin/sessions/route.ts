@@ -102,14 +102,6 @@ export async function GET(request: NextRequest) {
     console.log('[Sessions API] Email type:', typeof email);
     if (!email) {
       console.log('[Sessions API] Session not found in Redis');
-      // Debug: Try to list all admin-session keys
-      try {
-        const allAdminKeys = await redis.keys('admin-session:*');
-        console.log('[Sessions API] All admin-session keys in Redis:', allAdminKeys);
-        console.log('[Sessions API] Number of admin sessions:', allAdminKeys?.length || 0);
-      } catch (debugError) {
-        console.log('[Sessions API] Could not list admin keys:', debugError);
-      }
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 

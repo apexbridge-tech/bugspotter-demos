@@ -283,61 +283,7 @@ async function createJiraProject(
   console.log('[JIRA] ✅ Project created successfully');
   console.log('[JIRA] Project ID:', projectId);
   console.log('[JIRA] Project URL:', projectUrl);
-
-  // Try to enable anonymous/public access for the project
-  try {
-    console.log('[JIRA] Attempting to enable public access...');
-
-    // Set project permissions to allow anonymous viewing
-    const permissionResponse = await fetch(
-      `${JIRA_URL}/rest/api/3/project/${projectId}/permissionscheme`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: JIRA_AUTH_HEADER!,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          id: '10000', // Default permission scheme - this may vary
-        }),
-      }
-    );
-
-    if (permissionResponse.ok) {
-      console.log('[JIRA] ✅ Permission scheme applied');
-    } else {
-      console.log('[JIRA] ⚠️ Could not apply permission scheme (non-critical)');
-    }
-
-    // Grant browse project permission to anonymous users
-    const anonymousPermission = await fetch(`${JIRA_URL}/rest/api/3/project/${projectId}/role`, {
-      method: 'POST',
-      headers: {
-        Authorization: JIRA_AUTH_HEADER!,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        categorisedActors: {
-          'atlassian-group-role-actor': ['jira-users'],
-          'atlassian-user-role-actor': [],
-        },
-      }),
-    });
-
-    if (anonymousPermission.ok) {
-      console.log('[JIRA] ✅ Public access configured');
-    } else {
-      console.log('[JIRA] ⚠️ Public access not configured (may require admin settings)');
-      console.log(
-        '[JIRA] Note: To enable public access, configure anonymous access in JIRA admin settings'
-      );
-    }
-  } catch (publicAccessError) {
-    console.log('[JIRA] ⚠️ Could not configure public access:', publicAccessError);
-    console.log('[JIRA] This is non-critical - project is still created');
-  }
+  console.log('[JIRA] Note: Demo users can access JIRA using credentials provided in the email');
 
   return {
     projectKey,

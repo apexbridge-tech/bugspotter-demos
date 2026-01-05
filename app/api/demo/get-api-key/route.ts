@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const redis = getRedis();
     const sessionKey = `demo-session:${sessionId}`;
     console.log('[get-api-key] Looking for session key:', sessionKey);
-    
+
     const sessionData = await redis.get(sessionKey);
 
     if (!sessionData) {

@@ -443,8 +443,8 @@ export default function AdminPage() {
     if (token) {
       // Authenticate with magic link token
       fetch(`/api/auth/magic-link?token=${token}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success) {
             setSessionToken(data.sessionToken);
             localStorage.setItem('admin-session', data.sessionToken);

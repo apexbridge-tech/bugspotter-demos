@@ -96,26 +96,30 @@ export async function fetchDemoApiKey(
   try {
     console.log('[fetchDemoApiKey] Fetching API key for:', { sessionId, demo });
     const response = await fetch(`/api/demo/get-api-key?sessionId=${sessionId}&demo=${demo}`);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`[fetchDemoApiKey] Failed to fetch API key for ${demo}:`, response.status, errorText);
+      console.warn(
+        `[fetchDemoApiKey] Failed to fetch API key for ${demo}:`,
+        response.status,
+        errorText
+      );
       return null;
     }
-    
+
     const data = await response.json();
     console.log('[fetchDemoApiKey] API key fetched successfully:', {
       demo,
       projectId: data.projectId,
       projectName: data.projectName,
-      apiKeyPrefix: data.apiKey?.substring(0, 10) + '...'
+      apiKeyPrefix: data.apiKey?.substring(0, 10) + '...',
     });
-    
+
     if (!data.apiKey || !data.projectId) {
       console.error('[fetchDemoApiKey] Missing apiKey or projectId in response');
       return null;
     }
-    
+
     return { apiKey: data.apiKey, projectId: data.projectId };
   } catch (error) {
     console.error('[fetchDemoApiKey] Error fetching demo API key:', error);
