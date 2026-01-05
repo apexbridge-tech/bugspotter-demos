@@ -203,7 +203,7 @@ export default function Home() {
                 </button>
               </form>
               <p className="text-xs text-gray-500 text-center mt-4">
-                Your demo session will expire after 2 hours
+                Your demo session will expire after 24 hours
               </p>
             </div>
           </div>
