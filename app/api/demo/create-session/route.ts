@@ -510,7 +510,8 @@ async function sendDemoCredentialsEmail(
       </div>
 
       ${
-        sessionData.jiraProjectUrl && email === (JIRA_EMAIL || BUGSPOTTER_ADMIN_EMAIL)
+        sessionData.jiraProjectUrl &&
+        (email === JIRA_EMAIL || email === BUGSPOTTER_ADMIN_EMAIL)
           ? `
       <!-- JIRA Integration (Admin Access) -->
       <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0; border-radius: 4px;">
