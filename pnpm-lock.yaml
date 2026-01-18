@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@bugspotter/sdk':
-        specifier: 0.3.1
-        version: 0.3.1
+        specifier: 1.0.0
+        version: 1.0.0
       '@slack/web-api':
         specifier: ^7.12.0
         version: 7.12.0
@@ -195,7 +195,7 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
-  '@bugspotter/sdk@0.3.1':
+  '@bugspotter/sdk@1.0.0':
     resolution: {integrity: sha512-YFHo4FAznS82RoTXfSCKOsMUbJNWvlubN3ZWSJ69UKb8zDcmjdqdxu+RcUxPtDLqx0PYUpd0ULN9BS9aXW1xzw==}
     engines: {node: '>=16.0.0'}
 
@@ -2640,7 +2640,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bugspotter/sdk@0.3.1':
+  '@bugspotter/sdk@1.0.0':
     dependencies:
       '@rrweb/types': 2.0.0-alpha.18
       html-to-image: 1.11.13
