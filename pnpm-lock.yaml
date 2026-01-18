@@ -196,7 +196,7 @@ packages:
     engines: {node: '>=6.9.0'}
 
   '@bugspotter/sdk@1.0.0':
-    resolution: {integrity: sha512-YFHo4FAznS82RoTXfSCKOsMUbJNWvlubN3ZWSJ69UKb8zDcmjdqdxu+RcUxPtDLqx0PYUpd0ULN9BS9aXW1xzw==}
+    resolution: {integrity: sha512-/7bqN/aPFknQmIRk9itEMV4Mht4+SdJHC4ydJVMAIgqSjarbYcf1jw8t33xrQld1bO5B6jocoJ2HD2TrYoUh6Q==}
     engines: {node: '>=16.0.0'}
 
   '@emnapi/core@1.6.0':
